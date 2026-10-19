@@ -7,7 +7,7 @@ Dieser Plan zerlegt die Anwendung aus [`CLAUDE.md`](../CLAUDE.md) in 47 Arbeitsp
 **So benutzt du den Plan:**
 
 - Arbeite die Meilensteine der Reihe nach ab, innerhalb eines Meilensteins Welle für Welle (Abschnitt 6).
-- Alle Pakete einer Welle startest du gleichzeitig, jedes in einem eigenen Worktree. Danach mergst du sie und prüfst die Integration.
+- Alle Pakete einer Welle startest du gleichzeitig, jedes in einem eigenen Worktree. Danach mergst du sie und prüfst die Integration. Die Schritt-für-Schritt-Anleitung steht in Abschnitt 6 „Ablauf einer Welle“.
 - Deine eigenen Schritte sind mit **[Mensch]** markiert (Abschnitt 8). Den Fortschritt pflegst du in Abschnitt 3.
 
 Ein Agent startet ein Paket mit:
@@ -21,7 +21,7 @@ Ein Agent startet ein Paket mit:
 Diese Regeln sind für jeden Coding-Agent verbindlich.
 
 1. **Vor dem Start lesen:** [`CLAUDE.md`](../CLAUDE.md), die passende App-Datei ([`apps/api/CLAUDE.md`](../apps/api/CLAUDE.md) oder [`apps/web/CLAUDE.md`](../apps/web/CLAUDE.md)), die Pflichtlektüre des Pakets, die dort referenzierten Planungsentscheidungen (`PE-xx`, Abschnitt 11) und alle Dateien, die das Paket ändern wird.
-2. **Arbeitsort:** Du arbeitest im Worktree, den der Entwickler für das Paket angelegt hat (Branch `wp/<ID>`). Fehlen dort `apps/api/.env` oder `apps/web/.env.local`, kopiere sie aus dem Hauptcheckout. Gib ihren Inhalt nie aus.
+2. **Arbeitsort:** Du arbeitest im Worktree, den der Entwickler für das Paket angelegt hat (Branch `wp/<ID>`, Ordner `nlm-wt/<ID>` neben dem Repository, siehe Abschnitt 6 „Ablauf einer Welle“). Fehlen dort `apps/api/.env` oder `apps/web/.env.local`, kopiere sie aus dem Hauptcheckout. Gib ihren Inhalt nie aus.
 3. **Nur eigene Dateien:** Du änderst nur die Dateien unter „Dateien (Eigentum)“. Brauchst du eine Änderung an einer anderen Datei, änderst du sie nicht, sondern meldest sie im Abschlussbericht.
 4. **Keine schreibenden Git-Befehle** (`add`, `commit`, `branch`, `merge`, `worktree` usw.). Lesende Befehle sind erlaubt (`CLAUDE.md §11 „Git und Commits“`).
 5. **Abhängigkeiten:** Installiere nur die Pakete, die im Arbeitspaket unter „Umsetzung“ genannt sind (PE-03), und nur dann, wenn dir die betroffene `package.json` gehört. Mit diesem Plan sind sie freigegeben. Jede weitere Abhängigkeit meldest du, statt sie zu installieren.
@@ -265,13 +265,130 @@ flowchart LR
 
 ## 6. Meilensteine im Detail
 
-**Integrationspunkt nach jeder Welle** (gilt für alle Meilensteine, Schritt H-08):
+### Ablauf einer Welle (Schritt für Schritt, H-08)
 
-1. Branches `wp/<ID>` der Welle nacheinander in `master` mergen. Bei Konflikten in `pnpm-lock.yaml` `pnpm install` ausführen.
-2. Im Hauptcheckout `pnpm install && pnpm lint && pnpm typecheck && pnpm test` ausführen.
-3. Bei Migrationen: `pnpm --filter @notebooklm/api db:migrate` gegen `notebooklm-dev`.
-4. `pnpm dev` starten und die neue Funktion kurz von Hand anklicken.
-5. Ist etwas rot, startest du eine Fix-Sitzung direkt auf `master`, mit Verweis auf das verursachende Paket. Erst danach beginnt die nächste Welle.
+Diese Anleitung gilt für jede Welle jedes Meilensteins. Die Befehle laufen in **Git Bash** (unter Windows mit Git installiert) im Hauptcheckout `D:\Private Projekte\NotebookLM_Clone`. Platzhalter: `<ID>` ist die Paket-ID, z. B. `M0-OPS-01`.
+
+**Ordnerkonvention:** Alle Worktrees liegen **neben** dem Repository unter `D:\Private Projekte\nlm-wt\<ID>`. So landen sie nie versehentlich im Repository.
+
+#### Schritt 0 – Vorbereitung (einmal pro Welle, ca. 2 min)
+
+1. Im Hauptcheckout prüfen, dass `master` aktuell und sauber ist:
+   - `git switch master`
+   - `git status`. Es dürfen keine offenen Änderungen da sein.
+2. In der Wellen-Tabelle des Meilensteins (unten in diesem Abschnitt) nachsehen, welche Pakete zur Welle gehören.
+3. Für jedes Paket die Abhängigkeiten in Abschnitt 3 prüfen. Alle müssen auf `fertig` stehen.
+4. In Abschnitt 3 die Pakete der Welle auf `in Arbeit` setzen.
+
+#### Schritt 1 – Worktrees anlegen (pro Paket, ca. 1 min)
+
+Für **jedes** Paket der Welle:
+
+1. Worktree mit eigenem Branch von `master` anlegen:
+   `git worktree add "../nlm-wt/<ID>" -b "wp/<ID>" master`
+2. Ab M0-W2 die Env-Dateien hineinkopieren. Sie sind gitignored und deshalb im Worktree nicht vorhanden:
+   - `cp apps/api/.env "../nlm-wt/<ID>/apps/api/.env"`
+   - `cp apps/web/.env.local "../nlm-wt/<ID>/apps/web/.env.local"`
+3. Kontrolle: `git worktree list` zeigt den neuen Worktree mit Branch `[wp/<ID>]`.
+
+Den Befehl `pnpm install` im Worktree führt der Agent selbst aus (Regel 7 in Abschnitt 2).
+
+#### Schritt 2 – Agents starten (pro Paket, ca. 1 min)
+
+Für **jedes** Paket der Welle:
+
+1. In der Claude-Desktop-App (Tab „Code“) eine **neue Sitzung** öffnen und als Arbeitsordner `D:\Private Projekte\nlm-wt\<ID>` wählen. Keine zusätzliche Worktree-Option der App aktivieren, der Worktree existiert schon.
+2. Modell und Aufwand wählen: Für L-Pakete und Pakete mit Sicherheits- oder Zitatlogik ein starkes Modell mit hohem Aufwand, für S-Pakete reicht ein günstigeres.
+3. Diese Nachricht senden (nur die ID ändern):
+   > Lies `docs/build-plan.md` Abschnitt 2 und setze das Arbeitspaket `<ID>` vollständig um.
+4. Die Sitzung laufen lassen. Fragt der Agent nach Freigaben (z. B. `pnpm install`), freigeben, solange es zum Paket passt.
+
+Alle Sitzungen einer Welle laufen gleichzeitig. Du kannst sie morgens starten und abends weitermachen.
+
+#### Schritt 3 – Berichte prüfen (pro Paket, ca. 10 min)
+
+Wenn eine Sitzung fertig ist, liefert der Agent den Abschlussbericht aus Regel 8 in Abschnitt 2. Prüfe ihn so:
+
+1. **Checks:** lint, typecheck und test sind grün. Wenn nicht, schreib dem Agent in derselben Sitzung: „Behebe die fehlschlagenden Checks.“
+2. **Dateien:** Im Worktree `git status` und `git diff --stat` aufrufen. Alle geänderten Dateien müssen unter „Dateien (Eigentum)“ des Pakets stehen. Weitere fremde Dateien muss der Agent zurücknehmen.
+3. **Keine Secrets:** Keine `.env`-Datei taucht in `git status` auf, und im Diff stehen keine Schlüssel oder Zugangsdaten.
+4. **Inhalt:** Die Akzeptanzkriterien des Pakets gegen den Diff abgleichen. Zuerst die Tests lesen, dann den Code.
+5. **Offene Punkte:** Meldet der Agent nötige Änderungen an fremden Dateien, notierst du sie für den Integrationspunkt (Schritt 6).
+
+#### Schritt 4 – Im Worktree committen (pro Paket, ca. 1 min)
+
+Mit dem Commit-Vorschlag aus dem Bericht:
+
+- `git -C "../nlm-wt/<ID>" add -A`
+- `git -C "../nlm-wt/<ID>" commit -m "<Commit-Vorschlag>"`
+
+Vor dem `add` noch einmal `git -C "../nlm-wt/<ID>" status` prüfen.
+
+#### Schritt 5 – In `master` mergen (pro Welle, ca. 5 min)
+
+Erst wenn **alle** Pakete der Welle committet sind. Im Hauptcheckout auf `master`, in dieser Reihenfolge: zuerst SH, dann API, dann WEB, dann OPS.
+
+1. `git merge --no-ff "wp/<ID>"` für jedes Paket der Welle.
+2. **Konflikt nur in `pnpm-lock.yaml`:** das ist erwartet.
+   - `pnpm install`
+   - `git add pnpm-lock.yaml`
+   - `git commit --no-edit`
+3. **Konflikt in einer anderen Datei:** Das darf laut Abschnitt 5 nicht passieren. Mit `git merge --abort` abbrechen und eine Fix-Sitzung starten (Schritt 6, Punkt 5).
+
+#### Schritt 6 – Integrationspunkt (pro Welle, ca. 10 min)
+
+Im Hauptcheckout auf `master`:
+
+1. `pnpm install`
+2. `pnpm lint`, `pnpm typecheck`, `pnpm test`. Alles muss grün sein.
+3. Hat die Welle ein Gerüst-Paket (`Mx-API-01`) mit Migration enthalten: `pnpm --filter @notebooklm/api db:migrate`. Die Migration läuft gegen `notebooklm-dev` und ist dort meist schon angewendet, dann ändert sie nichts.
+4. `pnpm dev` starten und die neue Funktion kurz von Hand anklicken. Was zu prüfen ist, steht im Absatz „Integration“ des Meilensteins.
+5. **Ist etwas rot** oder gibt es gemeldete offene Punkte: eine Fix-Sitzung direkt im Hauptcheckout auf `master` starten, z. B. mit
+   > Lies `docs/build-plan.md` Abschnitt 2. Nach dem Merge der Welle `<Mx-Wy>` schlägt `<Check>` fehl. Ursache ist vermutlich Paket `<ID>`. Behebe nur das, ohne neue Funktionen.
+
+   Danach committen und die Checks wiederholen. Erst danach beginnt die nächste Welle.
+
+#### Schritt 7 – Aufräumen und Status (pro Welle, ca. 2 min)
+
+1. Für jedes Paket:
+   - `git worktree remove "../nlm-wt/<ID>"`
+   - `git branch -d "wp/<ID>"`
+2. In Abschnitt 3 die Pakete auf `fertig` setzen.
+3. Nicht pushen: siehe den nächsten Absatz.
+4. Weiter mit der nächsten Welle bei Schritt 0. Die neuen Worktrees zweigen vom aktualisierten `master` ab und sehen damit alle Verträge der vorherigen Welle.
+
+#### Wann gepusht wird
+
+Ein Push auf `master` löst auf Railway und Vercel **sofort ein Deployment** aus. Pushe `master` deshalb nur im `DEP`-Paket am Ende eines Meilensteins. Willst du zwischendurch eine Sicherung, pushe nur die `wp/<ID>`-Branches (`git push -u origin "wp/<ID>"`). Vercel baut daraus höchstens eine Vorschau, die die API wegen CORS nicht erreicht.
+
+#### Sonderfälle
+
+| Fall | Vorgehen |
+|---|---|
+| **M0-W1** (Root-Tooling entsteht erst) | Keine `.env`-Dateien kopieren. Die Agents von M0-OPS-02 und M0-OPS-03 prüfen nur ihre Dateien, M0-SH-01 prüft nur das eigene Paket (Regel 7). Lint läuft zum ersten Mal am Integrationspunkt. |
+| **Welle mit nur einem Paket** (z. B. M0-W3) | Ein Worktree ist trotzdem sinnvoll, weil `master` sauber bleibt. Alternativ arbeitet der Agent direkt im Hauptcheckout auf einem Branch, den du vorher mit `git switch -c "wp/<ID>"` anlegst. |
+| **Agent bricht ab oder liefert Unbrauchbares** | Worktree verwerfen (`git worktree remove --force "../nlm-wt/<ID>"`, `git branch -D "wp/<ID>"`) und das Paket neu starten, bei Bedarf mit einem Hinweis zur Ursache im Startprompt. |
+| **Ein Paket der Welle ist fertig, ein anderes hängt** | Das fertige Paket committen (Schritt 4), aber erst mergen, wenn die ganze Welle fertig ist. Ausnahme: Keine Abhängigkeit der nächsten Welle zeigt auf das hängende Paket. |
+| **Zu wenig Zeit für alle Pakete gleichzeitig** | Eine Welle darf auch nacheinander abgearbeitet werden. Die Reihenfolge innerhalb einer Welle ist egal. |
+
+#### Beispiel: M0-W1 komplett
+
+Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `master`).
+
+1. Worktrees anlegen:
+   - `git worktree add "../nlm-wt/M0-OPS-01" -b "wp/M0-OPS-01" master`
+   - `git worktree add "../nlm-wt/M0-OPS-02" -b "wp/M0-OPS-02" master`
+   - `git worktree add "../nlm-wt/M0-OPS-03" -b "wp/M0-OPS-03" master`
+   - `git worktree add "../nlm-wt/M0-SH-01" -b "wp/M0-SH-01" master`
+2. Vier Sitzungen in der Desktop-App öffnen, je eine pro Ordner, jeweils mit dem Startprompt und der passenden ID.
+3. Berichte prüfen (Schritt 3), in jedem Worktree committen (Schritt 4).
+4. Mergen in dieser Reihenfolge:
+   - `git merge --no-ff wp/M0-SH-01`
+   - `git merge --no-ff wp/M0-OPS-01`. Konflikt in `pnpm-lock.yaml` → `pnpm install`, `git add pnpm-lock.yaml`, `git commit --no-edit`.
+   - `git merge --no-ff wp/M0-OPS-02`
+   - `git merge --no-ff wp/M0-OPS-03`
+5. Integrationspunkt: `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+6. Aufräumen, Status in Abschnitt 3 auf `fertig`, weiter mit M0-W2.
 
 **Deployment-Pakete** folgen [`docs/deployment.md`](deployment.md) „Ablauf pro Meilenstein“. Sie enthalten jeweils:
 
@@ -1603,7 +1720,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 | H-05 | Mistral-Konto, API-Key, **monatliches Ausgabelimit** setzen, Key in dev-`.env` eintragen. Die Config verlangt ihn ab M0 (PE-03). | vor M0-W2-Integration | M0-Integration, M0-DEP-01 |
 | H-06 | Railway-Projekt in der EU-Region mit dem GitHub-Repo verbinden, `railway.json` nutzen, Variablen setzen | vor M0-DEP-01 | M0-DEP-01 |
 | H-07 | Vercel-Projekt mit Root `apps/web`, Variablen setzen. Die Vercel-Domain anschließend als `WEB_ORIGIN` in Railway eintragen. | vor M0-DEP-01 | M0-DEP-01 |
-| H-08 | **Pro Welle:** Worktree und Branch `wp/<ID>` je Paket anlegen (z. B. über die Desktop-App), Agents starten, Berichte lesen, committen (Commit-Vorschlag), mergen, Integrationspunkt aus Abschnitt 6 abarbeiten | ab M0-W1, laufend | jede folgende Welle |
+| H-08 | **Pro Welle:** Schritte 0–7 aus Abschnitt 6 „Ablauf einer Welle“ abarbeiten: Worktrees anlegen, Agents starten, Berichte prüfen, committen, mergen, Integrationspunkt, aufräumen | ab M0-W1, laufend | jede folgende Welle |
 | H-09 | Demo-Zugangsdaten festlegen, nur in der lokalen `apps/api/.env` und `apps/api/.env.production`. Seed gegen dev (nach M1-W2) und prod (M1-DEP-01) ausführen. | M1-W2 | M1-DEP-01 |
 | H-10 | Optional: Ollama starten (die CLI ist installiert, der Dienst läuft nicht), Modell ziehen, `OLLAMA_CONTEXT_LENGTH` setzen, `OLLAMA_*` in der dev-`.env` eintragen | M4-Integration | nichts (optional) |
 | H-11 | `E2E_USER_EMAIL` und `E2E_USER_PASSWORD` (Demo-Account dev) in `apps/web/.env.local` eintragen | vor M5-W1 | M5-OPS-01 |
