@@ -12,6 +12,14 @@ Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer samme
 
 ---
 
+## Projektstand
+
+**In Entwicklung (Meilenstein M0, Fundament).** Live ist aktuell nichts: Es gibt weder eine Demo noch lauffähige Funktionen. Das Repository enthält bislang Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
+
+Die Liste unter [Funktionen](#funktionen) beschreibt den **Zielumfang**. Sie gilt als umgesetzt, sobald Meilenstein M4 (Chat mit Zitaten) live ist. Dieser Abschnitt wird mit jedem Deployment aktualisiert.
+
+---
+
 ## Links
 
 | | |
@@ -25,6 +33,8 @@ Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer samme
 ---
 
 ## Funktionen
+
+_Zielumfang – noch nicht live, siehe [Projektstand](#projektstand)._
 
 - **Notebooks** anlegen, umbenennen und löschen
 - **Quellen** hinzufügen: PDF, TXT/Markdown oder eingefügter Text, mit sichtbarem Verarbeitungsstatus
@@ -155,7 +165,7 @@ Das Projekt ist in etwa einer Woche neben einer Vollzeitstelle entstanden. Statt
 | Exakte statt approximativer Vektorsuche | Bei Notebook-Größen der Demo schnell und exakt | HNSW-Index mit iterativem Scan |
 | Zwei Spalten ohne Studio-Funktionen, nur Desktop | Fokus auf den Kern: Quellen und belegte Antworten | Zusammenfassungen, FAQ, Audio-Overview, responsives Layout |
 
-Die Begründungen im Detail stehen in den [Architecture Decision Records](docs/adr/).
+Die Begründungen im Detail stehen in den [Architecture Decision Records](docs/adr/). Die Vereinfachungen selbst werden in ADR 4 festgehalten, der mit M6 folgt.
 
 ---
 
