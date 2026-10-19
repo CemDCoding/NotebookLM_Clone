@@ -83,6 +83,7 @@ Für Entwickler mit Spring-Hintergrund: Module entsprechen `@Configuration`-Einh
 | `MISTRAL_API_KEY` | Chat und Embeddings |
 | `CHAT_MODELS` | Erlaubte Chat-Modelle für den Picker, das erste ist der Standard (Standard: `mistral-small-latest,ministral-8b-latest`) |
 | `OLLAMA_BASE_URL` | Optional, aktiviert lokale Modelle |
+| `OLLAMA_CHAT_MODELS` | Optional, lokale Chat-Modelle für den Picker |
 | `MAX_FILE_SIZE_MB`, `MAX_PDF_PAGES`, `MAX_PASTED_TEXT_CHARS`, `MAX_SOURCES_PER_NOTEBOOK`, `MAX_NOTEBOOKS_PER_USER` | Upload- und Bestandslimits |
 | `CHAT_LIMIT_PER_USER_PER_HOUR`, `GLOBAL_CHAT_LIMIT_PER_DAY`, `GLOBAL_UPLOAD_LIMIT_PER_DAY` | Nutzungslimits |
 | `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` | Nur für das Seed-Skript |

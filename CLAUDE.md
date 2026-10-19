@@ -159,6 +159,10 @@ NotebookLM_Clone/
 ├── README.md                 # Einstieg für die Prüfer, Gliederung siehe Abschnitt 13
 ├── package.json              # Workspace-Root, übergreifende Skripte
 ├── pnpm-workspace.yaml
+├── tsconfig.base.json        # Gemeinsame, strikte TypeScript-Einstellungen
+├── .gitignore                # Schließt u. a. alle .env-Dateien außer .env.example aus
+├── .editorconfig
+├── .nvmrc                    # Node.js-Version (LTS)
 ├── apps/
 │   ├── web/                  # Next.js-Frontend (eigene CLAUDE.md, eigene .env.example)
 │   └── api/                  # NestJS-Backend (eigene CLAUDE.md, eigene .env.example)
