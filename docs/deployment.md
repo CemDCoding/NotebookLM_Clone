@@ -56,8 +56,8 @@ Die API verbindet sich über den **Session-Pooler (Port 5432)**, nicht über den
 1. `pnpm install`
 2. `apps/api/.env.example` nach `apps/api/.env` kopieren und mit den Werten von `notebooklm-dev` füllen.
 3. `apps/web/.env.example` nach `apps/web/.env.local` kopieren und füllen.
-4. `pnpm --filter api db:migrate`
-5. `pnpm --filter api db:seed`
+4. `pnpm --filter @notebooklm/api db:migrate`
+5. `pnpm --filter @notebooklm/api db:seed`
 6. `pnpm dev`
 
 Optional für lokale Modelle: Ollama starten und `OLLAMA_BASE_URL` in `apps/api/.env` setzen. Damit Prompts mit mehreren Quellenabschnitten nicht abgeschnitten werden, wird die Kontextlänge von Ollama erhöht (`OLLAMA_CONTEXT_LENGTH`, z. B. 16384).
@@ -68,12 +68,15 @@ Optional für lokale Modelle: Ollama starten und `OLLAMA_BASE_URL` in `apps/api/
 
 | Einstellung | Wert |
 |---|---|
-| Region | EU |
-| Build | `pnpm install --frozen-lockfile && pnpm --filter shared build && pnpm --filter api build` |
-| Start | `pnpm --filter api db:migrate && pnpm --filter api start:prod` |
+| Region | EU (im Dashboard wählen, nicht in der Datei) |
+| Build | `pnpm install --frozen-lockfile && pnpm --filter @notebooklm/shared build && pnpm --filter @notebooklm/api build` |
+| Start | `pnpm --filter @notebooklm/api db:migrate && pnpm --filter @notebooklm/api start:prod` |
 | Health-Check | `GET /health` |
+| Restart-Policy | bei Fehler, höchstens 5 Versuche |
 | `RUN_MODE` | `all` |
 | `WEB_ORIGIN` | Produktionsdomain von Vercel |
+
+Build, Start, Health-Check und Restart-Policy stehen versioniert in [`railway.json`](../railway.json) im Repository-Root. Der Service verwendet das Repository-Root als Root-Verzeichnis, damit der Workspace samt `packages/shared` gebaut wird. Die Datei hat Vorrang vor den Dashboard-Einstellungen, im Dashboard wird dafür nichts eingetragen.
 
 Alle weiteren Variablen stehen in `apps/api/.env.example`.
 
@@ -88,6 +91,9 @@ Migrationen laufen vor jedem Start. Schlägt eine Migration fehl, startet die ne
 | Root-Verzeichnis | `apps/web` |
 | Framework | Next.js |
 | Region der Funktionen | Frankfurt (`fra1`) |
+| Build-Command | `pnpm --filter @notebooklm/shared build && pnpm --filter @notebooklm/web build` |
+
+Framework, Region und Build-Command stehen versioniert in [`apps/web/vercel.json`](../apps/web/vercel.json). Das Paket `@notebooklm/shared` muss zuerst gebaut werden, weil es auf Vercel nicht vorab existiert. Damit Vercel auch Dateien außerhalb von `apps/web` bereitstellt, bleibt die Option „Include source files outside of the Root Directory“ aktiviert (Standard).
 
 Variablen laut `apps/web/.env.example`, mit `NEXT_PUBLIC_API_URL` auf die Railway-Domain.
 
@@ -113,7 +119,7 @@ Jeder Meilenstein endet mit einem Deployment:
 
 - [ ] Monatliches Ausgabelimit in der Mistral-Konsole gesetzt.
 - [ ] Registrierung in `notebooklm-prod` deaktiviert.
-- [ ] `db:seed` gegen Produktion ausgeführt, Demo-Login funktioniert.
+- [ ] `pnpm --filter @notebooklm/api db:seed:prod` ausgeführt, Demo-Login funktioniert. Das Skript liest `apps/api/.env.production`, die nur lokal liegt und durch `.gitignore` ausgeschlossen ist.
 - [ ] Hauptfluss live durchgespielt: Login, Notebook, Upload, Verarbeitung, Frage, Zitat, Export.
 - [ ] Keine Secrets im Repository (`.env`-Dateien ignoriert, Historie geprüft).
 - [ ] Keine Demo-Zugangsdaten im Repository oder auf der Live-Seite.
