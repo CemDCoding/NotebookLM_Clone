@@ -273,8 +273,8 @@ Diese Anleitung gilt für jede Welle jedes Meilensteins. Die Befehle laufen in *
 
 #### Schritt 0 – Vorbereitung (einmal pro Welle, ca. 2 min)
 
-1. Im Hauptcheckout prüfen, dass `master` aktuell und sauber ist:
-   - `git switch master`
+1. Im Hauptcheckout prüfen, dass `dev` aktuell und sauber ist:
+   - `git switch dev`
    - `git status`. Es dürfen keine offenen Änderungen da sein.
 2. In der Wellen-Tabelle des Meilensteins (unten in diesem Abschnitt) nachsehen, welche Pakete zur Welle gehören.
 3. Für jedes Paket die Abhängigkeiten in Abschnitt 3 prüfen. Alle müssen auf `fertig` stehen.
@@ -284,8 +284,8 @@ Diese Anleitung gilt für jede Welle jedes Meilensteins. Die Befehle laufen in *
 
 Für **jedes** Paket der Welle:
 
-1. Worktree mit eigenem Branch von `master` anlegen:
-   `git worktree add "../nlm-wt/<ID>" -b "wp/<ID>" master`
+1. Worktree mit eigenem Branch von `dev` anlegen:
+   `git worktree add "../nlm-wt/<ID>" -b "wp/<ID>" dev`
 2. Ab M0-W2 die Env-Dateien hineinkopieren. Sie sind gitignored und deshalb im Worktree nicht vorhanden:
    - `cp apps/api/.env "../nlm-wt/<ID>/apps/api/.env"`
    - `cp apps/web/.env.local "../nlm-wt/<ID>/apps/web/.env.local"`
@@ -324,11 +324,11 @@ Mit dem Commit-Vorschlag aus dem Bericht:
 
 Vor dem `add` noch einmal `git -C "../nlm-wt/<ID>" status` prüfen.
 
-#### Schritt 5 – In `master` mergen (pro Welle, ca. 5 min)
+#### Schritt 5 – In `dev` mergen (pro Welle, ca. 5 min)
 
-Erst wenn **alle** Pakete der Welle committet sind. Im Hauptcheckout auf `master`, in dieser Reihenfolge: zuerst SH, dann API, dann WEB, dann OPS.
+Erst wenn **alle** Pakete der Welle committet sind. Im Hauptcheckout auf `dev`, in dieser Reihenfolge: zuerst SH, dann API, dann WEB, dann OPS.
 
-1. `git merge --no-ff "wp/<ID>"` für jedes Paket der Welle.
+1. `git merge --no-ff --no-edit "wp/<ID>"` für jedes Paket der Welle. `--no-edit` übernimmt die Standard-Nachricht, ohne einen Editor zu öffnen.
 2. **Konflikt nur in `pnpm-lock.yaml`:** das ist erwartet.
    - `pnpm install`
    - `git add pnpm-lock.yaml`
@@ -337,13 +337,13 @@ Erst wenn **alle** Pakete der Welle committet sind. Im Hauptcheckout auf `master
 
 #### Schritt 6 – Integrationspunkt (pro Welle, ca. 10 min)
 
-Im Hauptcheckout auf `master`:
+Im Hauptcheckout auf `dev`:
 
 1. `pnpm install`
 2. `pnpm lint`, `pnpm typecheck`, `pnpm test`. Alles muss grün sein.
 3. Hat die Welle ein Gerüst-Paket (`Mx-API-01`) mit Migration enthalten: `pnpm --filter @notebooklm/api db:migrate`. Die Migration läuft gegen `notebooklm-dev` und ist dort meist schon angewendet, dann ändert sie nichts.
 4. `pnpm dev` starten und die neue Funktion kurz von Hand anklicken. Was zu prüfen ist, steht im Absatz „Integration“ des Meilensteins.
-5. **Ist etwas rot** oder gibt es gemeldete offene Punkte: eine Fix-Sitzung direkt im Hauptcheckout auf `master` starten, z. B. mit
+5. **Ist etwas rot** oder gibt es gemeldete offene Punkte: eine Fix-Sitzung direkt im Hauptcheckout auf `dev` starten, z. B. mit
    > Lies `docs/build-plan.md` Abschnitt 2. Nach dem Merge der Welle `<Mx-Wy>` schlägt `<Check>` fehl. Ursache ist vermutlich Paket `<ID>`. Behebe nur das, ohne neue Funktionen.
 
    Danach committen und die Checks wiederholen. Erst danach beginnt die nächste Welle.
@@ -355,31 +355,38 @@ Im Hauptcheckout auf `master`:
    - `git branch -d "wp/<ID>"`
 2. In Abschnitt 3 die Pakete auf `fertig` setzen.
 3. Nicht pushen: siehe den nächsten Absatz.
-4. Weiter mit der nächsten Welle bei Schritt 0. Die neuen Worktrees zweigen vom aktualisierten `master` ab und sehen damit alle Verträge der vorherigen Welle.
+4. Weiter mit der nächsten Welle bei Schritt 0. Die neuen Worktrees zweigen vom aktualisierten `dev` ab und sehen damit alle Verträge der vorherigen Welle.
 
 #### Wann gepusht wird
 
-Ein Push auf `master` löst auf Railway und Vercel **sofort ein Deployment** aus. Pushe `master` deshalb nur im `DEP`-Paket am Ende eines Meilensteins. Willst du zwischendurch eine Sicherung, pushe nur die `wp/<ID>`-Branches (`git push -u origin "wp/<ID>"`). Vercel baut daraus höchstens eine Vorschau, die die API wegen CORS nicht erreicht.
+Es gibt zwei langlebige Branches (PE-01):
+
+- **`dev`** ist der Integrationsbranch. Ihn darfst du jederzeit pushen (`git push -u origin dev`), z. B. als Sicherung nach jeder Welle. Railway deployt ihn nicht. Vercel baut daraus höchstens eine Vorschau, die die API wegen CORS nicht erreicht.
+- **`master`** ist die Produktion. Ein Push auf `master` löst auf Railway und Vercel **sofort ein Deployment** aus. Deshalb kommt `dev` nur im `DEP`-Paket am Ende eines Meilensteins nach `master`:
+  - `git switch master`
+  - `git merge --no-ff --no-edit dev`
+  - `git push`
+  - `git switch dev`
 
 #### Sonderfälle
 
 | Fall | Vorgehen |
 |---|---|
 | **M0-W1** (Root-Tooling entsteht erst) | Keine `.env`-Dateien kopieren. Die Agents von M0-OPS-02 und M0-OPS-03 prüfen nur ihre Dateien, M0-SH-01 prüft nur das eigene Paket (Regel 7). Lint läuft zum ersten Mal am Integrationspunkt. |
-| **Welle mit nur einem Paket** (z. B. M0-W3) | Ein Worktree ist trotzdem sinnvoll, weil `master` sauber bleibt. Alternativ arbeitet der Agent direkt im Hauptcheckout auf einem Branch, den du vorher mit `git switch -c "wp/<ID>"` anlegst. |
+| **Welle mit nur einem Paket** (z. B. M0-W3) | Ein Worktree ist trotzdem sinnvoll, weil `dev` sauber bleibt. Alternativ arbeitet der Agent direkt im Hauptcheckout auf einem Branch, den du vorher mit `git switch -c "wp/<ID>"` anlegst. |
 | **Agent bricht ab oder liefert Unbrauchbares** | Worktree verwerfen (`git worktree remove --force "../nlm-wt/<ID>"`, `git branch -D "wp/<ID>"`) und das Paket neu starten, bei Bedarf mit einem Hinweis zur Ursache im Startprompt. |
 | **Ein Paket der Welle ist fertig, ein anderes hängt** | Das fertige Paket committen (Schritt 4), aber erst mergen, wenn die ganze Welle fertig ist. Ausnahme: Keine Abhängigkeit der nächsten Welle zeigt auf das hängende Paket. |
 | **Zu wenig Zeit für alle Pakete gleichzeitig** | Eine Welle darf auch nacheinander abgearbeitet werden. Die Reihenfolge innerhalb einer Welle ist egal. |
 
 #### Beispiel: M0-W1 komplett
 
-Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `master`).
+Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 1. Worktrees anlegen:
-   - `git worktree add "../nlm-wt/M0-OPS-01" -b "wp/M0-OPS-01" master`
-   - `git worktree add "../nlm-wt/M0-OPS-02" -b "wp/M0-OPS-02" master`
-   - `git worktree add "../nlm-wt/M0-OPS-03" -b "wp/M0-OPS-03" master`
-   - `git worktree add "../nlm-wt/M0-SH-01" -b "wp/M0-SH-01" master`
+   - `git worktree add "../nlm-wt/M0-OPS-01" -b "wp/M0-OPS-01" dev`
+   - `git worktree add "../nlm-wt/M0-OPS-02" -b "wp/M0-OPS-02" dev`
+   - `git worktree add "../nlm-wt/M0-OPS-03" -b "wp/M0-OPS-03" dev`
+   - `git worktree add "../nlm-wt/M0-SH-01" -b "wp/M0-SH-01" dev`
 2. Vier Sitzungen in der Desktop-App öffnen, je eine pro Ordner, jeweils mit dem Startprompt und der passenden ID.
 3. Berichte prüfen (Schritt 3), in jedem Worktree committen (Schritt 4).
 4. Mergen in dieser Reihenfolge:
@@ -392,7 +399,7 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `master
 
 **Deployment-Pakete** folgen [`docs/deployment.md`](deployment.md) „Ablauf pro Meilenstein“. Sie enthalten jeweils:
 
-- Commit und Push auf `master`, Railway und Vercel deployen automatisch,
+- `dev` nach `master` mergen und `master` pushen (siehe „Wann gepusht wird“), Railway und Vercel deployen automatisch,
 - den Smoke-Test des Live-Zustands,
 - die Stand-Zeile im README,
 - den Devlog-Eintrag. Ein Agent darf den Entwurf schreiben, der Entwickler gibt ihn frei.
@@ -1714,12 +1721,12 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 | ID | Schritt | Ab wann nötig | Blockiert |
 |---|---|---|---|
 | H-01 | **Node.js 24 LTS** (laut `.nvmrc`) installieren, dann pnpm (`corepack enable` oder `npm i -g pnpm`). Prüfen mit `node -v` und `pnpm -v`. Aktuell ist **keins von beiden installiert**. | sofort | alles |
-| H-02 | Branch `feat/masterBuildPlan` mit diesem Plan nach `master` mergen und pushen. Ein GitHub-Remote muss existieren. `master` ist der Integrationsbranch (PE-01). | vor M0-W1 | M0-OPS-01 |
+| H-02 | Branch `feat/masterBuildPlan` mit diesem Plan nach `master` mergen und pushen, dann den Integrationsbranch `dev` von `master` anlegen (`git switch -c dev master`). Ein GitHub-Remote muss existieren (PE-01). | vor M0-W1 | M0-OPS-01 |
 | H-03 | Supabase-Projekt `notebooklm-dev` nach `docs/deployment.md` „Einrichtung Supabase“ einrichten: Frankfurt, Registrierung aus, asymmetrische JWT-Schlüssel, privater Bucket `sources`. `apps/api/.env` und `apps/web/.env.local` füllen. | vor M0-W3 | M0-API-02 |
 | H-04 | Supabase-Projekt `notebooklm-prod`, gleiche Einrichtung | vor M0-DEP-01 | M0-DEP-01 |
 | H-05 | Mistral-Konto, API-Key, **monatliches Ausgabelimit** setzen, Key in dev-`.env` eintragen. Die Config verlangt ihn ab M0 (PE-03). | vor M0-W2-Integration | M0-Integration, M0-DEP-01 |
-| H-06 | Railway-Projekt in der EU-Region mit dem GitHub-Repo verbinden, `railway.json` nutzen, Variablen setzen | vor M0-DEP-01 | M0-DEP-01 |
-| H-07 | Vercel-Projekt mit Root `apps/web`, Variablen setzen. Die Vercel-Domain anschließend als `WEB_ORIGIN` in Railway eintragen. | vor M0-DEP-01 | M0-DEP-01 |
+| H-06 | Railway-Projekt in der EU-Region mit dem GitHub-Repo verbinden, als Deploy-Branch **`master`** wählen, `railway.json` nutzen, Variablen setzen | vor M0-DEP-01 | M0-DEP-01 |
+| H-07 | Vercel-Projekt mit Root `apps/web` und Production Branch **`master`**, Variablen setzen. Die Vercel-Domain anschließend als `WEB_ORIGIN` in Railway eintragen. | vor M0-DEP-01 | M0-DEP-01 |
 | H-08 | **Pro Welle:** Schritte 0–7 aus Abschnitt 6 „Ablauf einer Welle“ abarbeiten: Worktrees anlegen, Agents starten, Berichte prüfen, committen, mergen, Integrationspunkt, aufräumen | ab M0-W1, laufend | jede folgende Welle |
 | H-09 | Demo-Zugangsdaten festlegen, nur in der lokalen `apps/api/.env` und `apps/api/.env.production`. Seed gegen dev (nach M1-W2) und prod (M1-DEP-01) ausführen. | M1-W2 | M1-DEP-01 |
 | H-10 | Optional: Ollama starten (die CLI ist installiert, der Dienst läuft nicht), Modell ziehen, `OLLAMA_CONTEXT_LENGTH` setzen, `OLLAMA_*` in der dev-`.env` eintragen | M4-Integration | nichts (optional) |
@@ -1805,7 +1812,7 @@ Mit K1 bis K6 sinkt deine Zeit auf ca. 20 h, dann allerdings ohne Puffer. Ein fr
 
 | ID | Entscheidung | Begründung |
 |---|---|---|
-| PE-01 | Jedes Paket läuft in einem eigenen Worktree auf Branch `wp/<ID>`. `master` ist der Integrationsbranch. Der Entwickler legt die Worktrees an, committet und mergt nach jeder Welle. | Abgestimmt in der Planungssitzung. Volle Checks pro Agent, keine Git-Befehle durch Agents. |
+| PE-01 | Jedes Paket läuft auf Branch `wp/<ID>`, parallel in einem eigenen Worktree, einzeln auch direkt im Hauptcheckout. **`dev`** ist der Integrationsbranch: Der Entwickler mergt dort nach jeder Welle. **`master`** ist die Produktion und bekommt `dev` nur im `DEP`-Paket. Einen `stage`-Branch gibt es nicht, weil es nur zwei Umgebungen gibt (`CLAUDE.md §8`). | Abgestimmt mit dem Entwickler (Worktrees und Merge durch ihn, `dev`/`master`-Modell am 2026-10-20). Volle Checks pro Agent, keine Git-Befehle durch Agents, und ein Push von `dev` als Sicherung löst nie ein Deployment aus. |
 | PE-02 | Pro Meilenstein besitzt ein **Gerüst-Paket** (`Mx-API-01`) `schema.ts`, Migrationen, `app.module.ts` und `apps/api/package.json`. Es registriert neue Module als leere Stubs. | Parallele API-Pakete berühren keine gemeinsamen Dateien. |
 | PE-03 | **Freigegebene Abhängigkeiten** (mit dem Plan genehmigt, abgestimmt in der Planungssitzung). Root: typescript, eslint, @eslint/js, typescript-eslint, eslint-config-prettier, prettier, vitest. Shared: zod, tsup. API: @nestjs/core, common, platform-express, config, throttler, testing, cli; helmet, reflect-metadata, rxjs, zod, drizzle-orm, drizzle-kit, postgres, jose, @supabase/supabase-js, pg-boss, openai, unpdf, unplugin-swc, @swc/core, supertest, tsx, Typings. Web: next, react, react-dom, @tanstack/react-query, @supabase/ssr, @supabase/supabase-js, zod, react-markdown, remark-gfm, Tailwind und shadcn/ui samt CLI-Abhängigkeiten (radix-ui, class-variance-authority, clsx, tailwind-merge, lucide-react, sonner), vitest, @vitejs/plugin-react, jsdom, @testing-library/*, @playwright/test. | `postgres` (postgres.js) ist der Standardtreiber für Drizzle. `jose` prüft JWKS ohne Supabase-Netzaufruf pro Request. `openai` deckt Mistral und Ollama ab (`CLAUDE.md §6`). `unpdf` liefert Text und Seitenzahl pro Seite ohne native Abhängigkeiten. |
 | PE-04 | Paketnamen `@notebooklm/api`, `@notebooklm/web`, `@notebooklm/shared`. `pnpm --filter api` und `--filter web` funktionieren weiter, weil pnpm den Scope bei eindeutigen Namen ergänzt. | Konsistent mit dem vorhandenen `@notebooklm/shared`. |

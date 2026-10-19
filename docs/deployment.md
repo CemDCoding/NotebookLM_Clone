@@ -107,7 +107,7 @@ Jeder Meilenstein endet mit einem Deployment:
 
 1. Lokal: `pnpm lint`, `pnpm typecheck` und `pnpm test` grün.
 2. Bei Schemaänderungen: Migration lokal gegen `notebooklm-dev` geprüft.
-3. Der Entwickler committet und pusht. Railway und Vercel deployen automatisch.
+3. Der Entwickler mergt den Integrationsbranch `dev` nach `master` und pusht `master`. Railway und Vercel deployen automatisch, beide nur von `master`. Ein Push von `dev` löst kein Produktions-Deployment aus.
 4. **Smoke-Test live:** den Live-Zustand des Meilensteins aus der `CLAUDE.md` (Abschnitt 10) von Hand durchspielen.
 5. Ergebnis im `docs/devlog.md` festhalten.
 
