@@ -28,6 +28,8 @@ Die KI arbeitet als ausführender Entwickler, die Entscheidungen bleiben beim Me
    - Funktionen, deren Aufwand nicht zur verfügbaren Zeit passte.
 4. **Bewusste Vereinfachungen:** Jede Vereinfachung wurde mit Begründung und Weg in die Produktion dokumentiert (ADR 4, README).
 
+5. **Build-Plan:** Ein eigener [Master-Prompt](prompts/build-plan-master-prompt.md) lässt eine neue Sitzung alle Projektdateien vollständig einlesen und daraus `docs/build-plan.md` erstellen. Das sind Arbeitspakete mit klarer Dateizuständigkeit, damit mehrere Coding-Agents parallel arbeiten können, ohne sich gegenseitig zu stören.
+
 **Erkenntnis:** Die erste Fassung der Planung war zu umfangreich und enthielt technische Fehler. Erst die gezielten Review-Runden mit klaren Kriterien haben sie umsetzbar gemacht.
 
 ---
