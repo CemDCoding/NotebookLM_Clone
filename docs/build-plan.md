@@ -52,9 +52,9 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M0-API-02 | Datenbank, Health und Fehlerformat | M0 | API | W3 | M0-API-01, M0-SH-01, H-03 | M | fertig |
 | M0-WEB-02 | App-Name, Impressum und Datenschutz | M0 | WEB | W4 | M0-WEB-01 | S | fertig |
 | M0-DEP-01 | Deployment M0 | M0 | HUM | W4 | alle M0, H-04 bis H-07 | H | fertig |
-| M1-SH-01 | Notebook-Verträge | M1 | SH | W1 | M0-DEP-01 | S | offen |
-| M1-API-01 | Gerüst M1: Schema `notebooks`, Modul-Stubs, Decorators | M1 | API | W1 | M0-DEP-01 | M | offen |
-| M1-WEB-01 | Supabase-Login, `proxy.ts` und API-Client | M1 | WEB | W1 | M0-DEP-01 | L | offen |
+| M1-SH-01 | Notebook-Verträge | M1 | SH | W1 | M0-DEP-01 | S | fertig |
+| M1-API-01 | Gerüst M1: Schema `notebooks`, Modul-Stubs, Decorators | M1 | API | W1 | M0-DEP-01 | M | fertig |
+| M1-WEB-01 | Supabase-Login, `proxy.ts` und API-Client | M1 | WEB | W1 | M0-DEP-01 | L | fertig |
 | M1-API-02 | JWT-Auth-Guard | M1 | API | W2 | M1-API-01 | M | offen |
 | M1-API-03 | Notebooks-Modul, Bestandslimit und Ownership | M1 | API | W2 | M1-API-01, M1-SH-01 | L | offen |
 | M1-API-04 | Seed-Skript Demo-Account | M1 | API | W2 | M1-API-01 | M | offen |
