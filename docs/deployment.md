@@ -18,6 +18,22 @@ Dieses Dokument beschreibt Umgebungen, Einrichtung und Deployment des NotebookLM
 
 ---
 
+## Überblick: Dienste und Schlüssel
+
+Zur Laufzeit: Wer spricht mit wem, und welcher Schlüssel liegt wo? Türkis sind öffentliche Werte oder das Login-Token eines Nutzers, orange sind Secrets, die den Server nie verlassen.
+
+![Zusammenspiel von Browser, Vercel, Railway, Supabase und Mistral zur Laufzeit](diagrams/runtime-keys.svg)
+
+Beim Deployment: Der Code kommt über GitHub, die Variablen trägt der Entwickler von Hand in die Dashboards ein. GitHub kennt keine Secrets.
+
+![Deployment über GitHub und die Umgebungsvariablen in Vercel und Railway](diagrams/deploy-env.svg)
+
+- Der `sb_publishable`-Key ist bewusst öffentlich. Er erlaubt nur den Login. Wegen RLS ohne Policies erreicht er keine Daten.
+- Das JWT ist ein kurzlebiger Ausweis pro Nutzer. Die API prüft es mit den öffentlichen Schlüsseln des Supabase-Projekts (JWKS), ein Secret braucht sie dafür nicht.
+- `NEXT_PUBLIC_*` wird beim Build eingebacken. Ändert sich die Railway-Domain, muss Vercel neu bauen.
+
+---
+
 ## Kosten
 
 Ziel ist der günstigste Betrieb, der für eine öffentliche Demo zuverlässig ist.
