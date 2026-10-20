@@ -16,7 +16,11 @@ Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer samme
 
 ## Projektstand
 
-**In Entwicklung (Meilenstein M0, Fundament).** Live ist aktuell nichts: Es gibt weder eine Demo noch lauffähige Funktionen. Das Repository enthält bislang Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
+**Meilenstein M0 (Fundament) ist live.** Live sind:
+- die Startseite mit Impressum und Datenschutzerklärung auf Vercel,
+- die API auf Railway (EU), deren Health-Check die Verbindung zur Datenbank in Frankfurt meldet.
+
+Anmeldung und Fachfunktionen gibt es noch nicht, der Button „Anmelden“ führt bis M1 ins Leere. Außerdem enthält das Repository Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
 
 Die Liste unter [Funktionen](#funktionen) beschreibt den **Zielumfang**. Sie gilt als umgesetzt, sobald Meilenstein M4 (Chat mit Zitaten) live ist. Dieser Abschnitt wird mit jedem Deployment aktualisiert.
 
@@ -26,7 +30,7 @@ Die Liste unter [Funktionen](#funktionen) beschreibt den **Zielumfang**. Sie gil
 
 | | |
 |---|---|
-| **Live-Demo** | _folgt mit dem ersten Deployment_ |
+| **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) (aktuell Stand M0: Startseite, Anmeldung folgt mit M1) |
 | **Loom-Video** | _folgt zur Abgabe_ |
 | **Zugang** | Die Zugangsdaten zum Demo-Account stehen in der Bewerbungs-Mail. Eine Registrierung ist bewusst nicht vorgesehen ([warum](#bewusste-abwägungen)). |
 

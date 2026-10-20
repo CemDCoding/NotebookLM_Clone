@@ -80,11 +80,15 @@ Die Einstellungen werden **im Dashboard** in den Settings des Service gesetzt. D
 | Deploy | Healthcheck Path / Timeout | `/health` / `60` Sekunden |
 | Deploy | Restart Policy | On Failure, höchstens 5 Versuche |
 | Config-as-code | Railway Config File | leer |
+| Networking | Public Domain | `quellenchat-api.up.railway.app`, Target Port `8080` |
+| Variables | `PORT` | `8080` |
 | Variables | `RUN_MODE` | `all` |
 | Variables | `WEB_ORIGIN` | Produktionsdomain von Vercel |
 
 - **Root Directory leer:** Der Build braucht `pnpm-lock.yaml` und `packages/shared` aus dem Repository-Root.
 - **Watch Paths leer:** Sonst löst eine Änderung nur in `packages/shared` kein Deployment aus.
+- **`PORT` ausdrücklich setzen:** Ohne die Variable übernahm Railway den Port 5432 aus der `DATABASE_URL`. Die App lauschte dann dort, während die öffentliche Domain keine Antwort bekam (`502 Application failed to respond`, Healthcheck trotzdem grün). `PORT` und der Target Port der Domain stehen deshalb fest auf `8080`.
+- **Client-IP für das Rate-Limit:** `trust proxy` steht auf `1`. Live gemessen: Verschiedene Client-IPs bekommen getrennte Zähler, gefälschte `X-Forwarded-For`-Header ändern den Zähler nicht. Bekannte Einschränkung: Pro Client entstehen zwei Zähler, die abwechselnd hochzählen. Das Limit pro IP liegt damit effektiv bis zum Doppelten. Für den groben Flutschutz ist das unkritisch, die fachlichen Limits zählen pro Nutzer in der Datenbank.
 - **Nur ein Service:** Railway erkennt den pnpm-Workspace und legt beim Verbinden für jede App einen Service an. Der Service für `@notebooklm/web` wird gelöscht, weil das Frontend auf Vercel läuft.
 
 **Warum keine Konfigurationsdatei:** Ursprünglich lagen diese Werte versioniert in einer `railway.json`. Railway hat diese Config as Code abgekündigt. Neue Services können sie seit 2026-08-28 nicht mehr nutzen, bestehende Dateien werden nur bis 2026-12-01 gelesen. Der Nachfolger „Infrastructure as Code“ (`.railway/railway.ts`) bräuchte das npm-Paket `railway` und die Railway-CLI. Außerdem wird er nicht beim Deployment angewendet, sondern per `railway config apply`. Für einen einzigen Service steht das in keinem Verhältnis zum Nutzen. Die Werte stehen deshalb im Dashboard und sind hier dokumentiert.
@@ -103,6 +107,17 @@ Migrationen laufen vor jedem Start. Schlägt eine Migration fehl, startet die ne
 | Framework | Next.js |
 | Region der Funktionen | Frankfurt (`fra1`) |
 | Build-Command | `pnpm --filter @notebooklm/shared build && pnpm --filter @notebooklm/web build` |
+
+Im Dashboard gesetzt:
+
+| Einstellung | Wert |
+|---|---|
+| Project Name | `quellenchat` (bestimmt die Domain `quellenchat.vercel.app`) |
+| Production Branch | `master` |
+| Node.js Version | `24.x` |
+| Variable `ENABLE_EXPERIMENTAL_COREPACK` | `1`, damit Vercel die pnpm-Version aus `packageManager` nutzt (12.14.0) statt seiner eigenen |
+
+Beim Import übernimmt Vercel den Repository-Namen als Projektnamen, und ist der Name schon vergeben, hängt es ein Zufallssuffix an. Den Namen deshalb vor dem ersten Deploy setzen. Die Domain lässt sich später unter `https://vercel.com/<team>/<projekt>/settings/domains` ändern, denn in der Seitenleiste der Settings fehlt dieser Punkt.
 
 Framework, Region und Build-Command stehen versioniert in [`apps/web/vercel.json`](../apps/web/vercel.json). Das Paket `@notebooklm/shared` muss zuerst gebaut werden, weil es auf Vercel nicht vorab existiert. Damit Vercel auch Dateien außerhalb von `apps/web` bereitstellt, bleibt die Option „Include source files outside of the Root Directory“ aktiviert (Standard).
 

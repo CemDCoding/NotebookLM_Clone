@@ -30,7 +30,7 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 
 ## 2026-10-20 – Fundament
 
-**Meilenstein:** M0 – alle Agent-Pakete fertig, Deployment (M0-DEP-01) offen
+**Meilenstein:** M0 – abgeschlossen und live (M0-DEP-01)
 
 **Umgesetzt**
 - Einrichtung: Node.js 24 und pnpm 12 (alles auf Laufwerk D:), Branch-Modell mit `dev` als Integrations- und `master` als Produktionsbranch, Supabase-Projekt `notebooklm-dev` in Frankfurt, Mistral-Konto mit API-Key.
@@ -70,7 +70,22 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - Railway hat Config as Code (`railway.json`) abgekündigt. Neue Services können sie seit 2026-08-28 nicht mehr nutzen, die Datei wäre also ignoriert worden. Aufgefallen ist das erst im Dashboard. `railway.json` wurde entfernt, die Werte stehen jetzt als Referenz für die Dashboard-Einstellungen in `docs/deployment.md`. Den Nachfolger „Infrastructure as Code“ habe ich verworfen, weil er eine neue Abhängigkeit und die CLI braucht und nicht beim Deployment angewendet wird.
 - Railway legt bei einem pnpm-Workspace automatisch einen Service pro App an. Der Web-Service wurde gelöscht, weil das Frontend auf Vercel läuft.
 - Bei der Wahl der Vercel-Domain kam die Frage nach dem Markenrecht auf. Die öffentliche App heißt jetzt **Quellenchat**, „NotebookLM“ wird nur noch beschreibend genannt, mit Markenhinweis im Footer und im README.
+- Erster Deploy: Build, Migration und Healthcheck grün, die Domain lieferte aber `502`. Railway hatte `PORT` selbst auf 5432 gesetzt, den Port aus der `DATABASE_URL`. Gelöst mit `PORT=8080` und passendem Target Port der Domain.
+- Offener Punkt drizzle-kit erledigt: Railway entfernt devDependencies nicht, `db:migrate` läuft beim Start durch.
+- Offener Punkt `trust proxy` erledigt, gemessen nur über die Rate-Limit-Header, ohne IPs zu loggen. Verschiedene Client-IPs (Hotspot und LAN) bekommen getrennte Zähler, gefälschte `X-Forwarded-For`-Header werden ignoriert. Pro Client entstehen allerdings zwei abwechselnde Zähler, die Ursache ist ohne IP-Logging nicht belegbar. Das ist als bekannte Einschränkung dokumentiert.
+- KI-Fehleinschätzung: Claude schloss aus einem ersten Netzwechsel-Test, das Limit zähle nach Proxy-IPs, und schlug einen eigenen Guard auf `X-Real-IP` vor. Der Test hatte aber keinen gültigen IP-Nachweis, weil der Pi-hole den IP-Echo-Dienst blockierte. Auf meinen Wunsch wurde mit Zeitstempeln und IP-Hash wiederholt, und das Ergebnis widerlegte den Befund. Lehre: Eine Messung zählt erst, wenn ihre Vorbedingungen belegt sind.
 - Neues Paket M0-WEB-02 vor dem ersten Deployment: Impressum und Datenschutzerklärung. Die Anbieterangaben liegen in Env-Variablen, damit die Anschrift nicht im öffentlichen Repository steht. Ohne sie bricht der Vercel-Produktions-Build ab, lokal mit `VERCEL_ENV=production` geprüft. Beide Texte sind Entwürfe ohne Rechtsberatung und stehen auf der Checkliste vor der Abgabe.
 
+- Vercel übernahm beim Import den Repository-Namen und veröffentlichte zuerst unter `notebook-lm-clone-lyart.vercel.app`. Projekt in `quellenchat` umbenannt, Domain `quellenchat.vercel.app` hinzugefügt, alte Domain entfernt. Der Domain-Punkt fehlte in der Seitenleiste der Settings und war nur per direktem Link erreichbar.
+- `ENABLE_EXPERIMENTAL_COREPACK=1` auf Vercel, damit dort wie auf Railway pnpm 12.14.0 aus `packageManager` baut.
+
+**Smoke-Test live (M0-DEP-01)**
+- `quellenchat.vercel.app`: Startseite, Impressum und Datenschutz liefern `200`, Funktionen in `fra1`.
+- `GET quellenchat-api.up.railway.app/health` → `200` mit `database: up`.
+- Helmet-Header vorhanden (CSP, HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy`), kein `X-Powered-By`.
+- CORS: Preflight von der Web-Domain freigegeben, von fremder Origin nicht.
+- Railway-Logs ohne Secrets.
+- Konsole: einziger Fehler ist ein `404` beim Prefetch von `/login`. Die Login-Seite entsteht in M1-WEB-01, der Fehler verschwindet damit. Bewusst nicht mit `prefetch={false}` überdeckt.
+
 **Nächster Schritt**
-- Railway (H-06), Vercel (H-07), danach Smoke-Test live und README-Stand „M0 live“.
+- M1 – Login und Notebooks, Welle 1: M1-SH-01, M1-API-01, M1-WEB-01.

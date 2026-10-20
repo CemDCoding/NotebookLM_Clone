@@ -81,7 +81,7 @@ Für Entwickler mit Spring-Hintergrund: Module entsprechen `@Configuration`-Einh
 
 | Variable | Zweck |
 |---|---|
-| `PORT` | Port der API (lokal 4000) |
+| `PORT` | Port der API (lokal 4000, auf Railway fest `8080`, siehe `docs/deployment.md`) |
 | `RUN_MODE` | `all` (Standard), `api` oder `worker`, siehe Abschnitt 9 der Root-Datei |
 | `DATABASE_URL` | Postgres-Verbindung über den **Session-Pooler, Port 5432** |
 | `SUPABASE_URL` | Projekt-URL, für JWKS und Storage |
