@@ -108,6 +108,17 @@ Migrationen laufen vor jedem Start. Schlägt eine Migration fehl, startet die ne
 | Region der Funktionen | Frankfurt (`fra1`) |
 | Build-Command | `pnpm --filter @notebooklm/shared build && pnpm --filter @notebooklm/web build` |
 
+Im Dashboard gesetzt:
+
+| Einstellung | Wert |
+|---|---|
+| Project Name | `quellenchat` (bestimmt die Domain `quellenchat.vercel.app`) |
+| Production Branch | `master` |
+| Node.js Version | `24.x` |
+| Variable `ENABLE_EXPERIMENTAL_COREPACK` | `1`, damit Vercel die pnpm-Version aus `packageManager` nutzt (12.14.0) statt seiner eigenen |
+
+Beim Import übernimmt Vercel den Repository-Namen als Projektnamen, und ist der Name schon vergeben, hängt es ein Zufallssuffix an. Den Namen deshalb vor dem ersten Deploy setzen. Die Domain lässt sich später unter `https://vercel.com/<team>/<projekt>/settings/domains` ändern, denn in der Seitenleiste der Settings fehlt dieser Punkt.
+
 Framework, Region und Build-Command stehen versioniert in [`apps/web/vercel.json`](../apps/web/vercel.json). Das Paket `@notebooklm/shared` muss zuerst gebaut werden, weil es auf Vercel nicht vorab existiert. Damit Vercel auch Dateien außerhalb von `apps/web` bereitstellt, bleibt die Option „Include source files outside of the Root Directory“ aktiviert (Standard).
 
 Variablen laut `apps/web/.env.example`, mit `NEXT_PUBLIC_API_URL` auf die Railway-Domain. Die vier `IMPRESSUM_*`-Variablen sind für die Produktion Pflicht. Fehlen sie, bricht der Build ab, damit die Seite nie ohne Impressum live geht. Sie werden nur in Vercel eingetragen, nie im Repository.
