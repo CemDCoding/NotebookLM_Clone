@@ -67,17 +67,27 @@ Optional für lokale Modelle: Ollama starten und `OLLAMA_BASE_URL` in `apps/api/
 
 ## API auf Railway
 
-| Einstellung | Wert |
-|---|---|
-| Region | EU (im Dashboard wählen, nicht in der Datei) |
-| Build | `pnpm install --frozen-lockfile && pnpm --filter @notebooklm/shared build && pnpm --filter @notebooklm/api build` |
-| Start | `pnpm --filter @notebooklm/api db:migrate && pnpm --filter @notebooklm/api start:prod` |
-| Health-Check | `GET /health` |
-| Restart-Policy | bei Fehler, höchstens 5 Versuche |
-| `RUN_MODE` | `all` |
-| `WEB_ORIGIN` | Produktionsdomain von Vercel |
+Die Einstellungen werden **im Dashboard** in den Settings des Service gesetzt. Diese Tabelle ist die verbindliche Referenz dafür. Weicht das Dashboard ab, gilt die Tabelle.
 
-Build, Start, Health-Check und Restart-Policy stehen versioniert in [`railway.json`](../railway.json) im Repository-Root. Der Service verwendet das Repository-Root als Root-Verzeichnis, damit der Workspace samt `packages/shared` gebaut wird. Die Datei hat Vorrang vor den Dashboard-Einstellungen, im Dashboard wird dafür nichts eingetragen.
+| Bereich | Einstellung | Wert |
+|---|---|---|
+| Source | Branch | `master` |
+| Source | Root Directory | leer (Repository-Root) |
+| Build | Custom Build Command | `pnpm install --frozen-lockfile && pnpm --filter @notebooklm/shared build && pnpm --filter @notebooklm/api build` |
+| Build | Watch Paths | leer |
+| Deploy | Region | EU West (Amsterdam) |
+| Deploy | Custom Start Command | `pnpm --filter @notebooklm/api db:migrate && pnpm --filter @notebooklm/api start:prod` |
+| Deploy | Healthcheck Path / Timeout | `/health` / `60` Sekunden |
+| Deploy | Restart Policy | On Failure, höchstens 5 Versuche |
+| Config-as-code | Railway Config File | leer |
+| Variables | `RUN_MODE` | `all` |
+| Variables | `WEB_ORIGIN` | Produktionsdomain von Vercel |
+
+- **Root Directory leer:** Der Build braucht `pnpm-lock.yaml` und `packages/shared` aus dem Repository-Root.
+- **Watch Paths leer:** Sonst löst eine Änderung nur in `packages/shared` kein Deployment aus.
+- **Nur ein Service:** Railway erkennt den pnpm-Workspace und legt beim Verbinden für jede App einen Service an. Der Service für `@notebooklm/web` wird gelöscht, weil das Frontend auf Vercel läuft.
+
+**Warum keine Konfigurationsdatei:** Ursprünglich lagen diese Werte versioniert in einer `railway.json`. Railway hat diese Config as Code abgekündigt. Neue Services können sie seit 2026-08-28 nicht mehr nutzen, bestehende Dateien werden nur bis 2026-12-01 gelesen. Der Nachfolger „Infrastructure as Code“ (`.railway/railway.ts`) bräuchte das npm-Paket `railway` und die Railway-CLI. Außerdem wird er nicht beim Deployment angewendet, sondern per `railway config apply`. Für einen einzigen Service steht das in keinem Verhältnis zum Nutzen. Die Werte stehen deshalb im Dashboard und sind hier dokumentiert.
 
 Alle weiteren Variablen stehen in `apps/api/.env.example`.
 
@@ -96,7 +106,9 @@ Migrationen laufen vor jedem Start. Schlägt eine Migration fehl, startet die ne
 
 Framework, Region und Build-Command stehen versioniert in [`apps/web/vercel.json`](../apps/web/vercel.json). Das Paket `@notebooklm/shared` muss zuerst gebaut werden, weil es auf Vercel nicht vorab existiert. Damit Vercel auch Dateien außerhalb von `apps/web` bereitstellt, bleibt die Option „Include source files outside of the Root Directory“ aktiviert (Standard).
 
-Variablen laut `apps/web/.env.example`, mit `NEXT_PUBLIC_API_URL` auf die Railway-Domain.
+Variablen laut `apps/web/.env.example`, mit `NEXT_PUBLIC_API_URL` auf die Railway-Domain. Die vier `IMPRESSUM_*`-Variablen sind für die Produktion Pflicht. Fehlen sie, bricht der Build ab, damit die Seite nie ohne Impressum live geht. Sie werden nur in Vercel eingetragen, nie im Repository.
+
+**Projektname und Domain:** Das Vercel-Projekt heißt `quellenchat`. Die Produktionsdomain `https://quellenchat.vercel.app` ist zugleich `WEB_ORIGIN` in Railway. Ist der Name vergeben, hängt Vercel ein Suffix an, dann wird `WEB_ORIGIN` angepasst. Die Domain enthält bewusst nicht die Marke „NotebookLM“ (`CLAUDE.md` §1).
 
 CORS erlaubt nur die Produktionsdomain. Preview-Deployments von Vercel erreichen die API deshalb nicht. Das ist gewollt.
 
@@ -125,4 +137,5 @@ Jeder Meilenstein endet mit einem Deployment:
 - [ ] Keine Secrets im Repository (`.env`-Dateien ignoriert, Historie geprüft).
 - [ ] Keine Demo-Zugangsdaten im Repository oder auf der Live-Seite.
 - [ ] README-Links zu Live-Demo und Loom-Video gesetzt.
+- [ ] Impressum zeigt die richtigen Anbieterangaben. Die Datenschutzerklärung stimmt mit der tatsächlichen Verarbeitung überein: Anbieter, Cookies, Speicherdauer. Beide Texte idealerweise von jemandem mit juristischem Hintergrund gegenlesen lassen.
 - [ ] **Pausierung geprüft:** Supabase pausiert Free-Projekte nach längerer Inaktivität. Prüfen, ob das Polling von pg-boss das Projekt aktiv hält. Falls nicht, für die Bewerbungsphase einen Keep-alive einrichten.

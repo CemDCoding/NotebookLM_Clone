@@ -26,6 +26,8 @@ Dieses Projekt ist eine **Bewerbungsaufgabe**: ein Nachbau von [Google NotebookL
 
 ### Produktidee
 
+Öffentlich heißt die App **Quellenchat** (Startseite, Seitentitel, Domain). „NotebookLM“ ist eine Marke von Google und wird nur beschreibend genannt („ein Nachbau von NotebookLM“), nie als eigener Produkt- oder Domainname. Interne Namen wie Paketnamen und Supabase-Projekte bleiben unverändert.
+
 Nutzer sammeln eigene Dokumente in **Notebooks** und sprechen anschließend mit einem KI-Assistenten über genau diese Quellen.
 
 **Kernversprechen:** Antworten stützen sich ausschließlich auf die hochgeladenen Quellen und sind mit **prüfbaren Zitaten** belegt. Geben die Quellen keine Antwort her, sagt der Assistent das klar und erfindet nichts.
@@ -53,6 +55,7 @@ Nutzer sammeln eigene Dokumente in **Notebooks** und sprechen anschließend mit 
 | Zitate | Marker wie `[1]` in der Antwort. Hover zeigt die Textstelle, Klick öffnet ein **Seitenpanel mit dem zitierten Abschnitt**, Quellentitel und Seitenzahl. Kein eingebetteter PDF-Viewer. |
 | Modellwahl | Modell-Picker im Chat (Mistral-Modelle live, Ollama-Modelle lokal). |
 | Datenschutz | Löschen von Quelle, Notebook und Chatverlauf inklusive aller Dateien und Vektoren. Export aller eigenen Daten als JSON. |
+| Rechtliches | Öffentliche Seiten **Impressum** und **Datenschutzerklärung**, verlinkt im Footer aller öffentlichen Seiten. Die Anbieterangaben kommen aus Umgebungsvariablen und stehen nie im Repository. |
 
 ### Optional (nur wenn Zeit bleibt)
 
@@ -268,6 +271,7 @@ Nutzer laden beliebige Dokumente hoch. Diese können Anweisungen an das Modell e
 - **Recht auf Löschung (Art. 17):** Das Löschen einer Quelle, eines Notebooks oder des Chatverlaufs entfernt Dateien, Abschnitte, Vektoren und Nachrichten vollständig. Accounts löscht in der Demo der Betreiber.
 - **Datenübertragbarkeit (Art. 20):** Export aller eigenen Notebooks, Quellen-Metadaten und Chats als JSON.
 - **Datensparsamkeit im Logging:** Dokumentinhalte, Prompts und Antworten werden nie geloggt. Geloggt werden nur IDs, Status, Dauer und Fehlerklassen.
+- **Datenschutzerklärung (`/datenschutz`):** Sie beschreibt die tatsächliche Verarbeitung. Kommt ein Anbieter, eine Datenart oder ein Cookie hinzu, wird sie im selben Schritt angepasst. Impressum und Datenschutzerklärung sind Entwürfe ohne Rechtsberatung und werden vor der Abgabe geprüft.
 
 ---
 
