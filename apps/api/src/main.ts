@@ -25,6 +25,8 @@ async function bootstrap(): Promise<void> {
     origin: config.webOrigin,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Authorization', 'Content-Type'],
+    // Lets the web app read the request ID, so an error message can show it for support.
+    exposedHeaders: ['X-Request-Id'],
   });
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
   app.enableShutdownHooks();
