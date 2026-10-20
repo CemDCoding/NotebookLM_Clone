@@ -1,8 +1,10 @@
-# NotebookLM-Klon
+# Quellenchat – ein NotebookLM-Nachbau
 
 **Mit eigenen Dokumenten sprechen – mit belegten Antworten, DSGVO-konform in der EU.**
 
 Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer sammeln PDFs und Texte in Notebooks und stellen Fragen dazu. Die Antworten stützen sich ausschließlich auf diese Quellen. Jede Aussage ist mit einem Zitat belegt, das sich bis zur Textstelle zurückverfolgen lässt.
+
+> Unabhängiges Lernprojekt im Rahmen einer Bewerbung, nicht mit Google verbunden. NotebookLM ist eine Marke von Google LLC. Die App tritt deshalb öffentlich unter dem Namen **Quellenchat** auf.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-App_Router-000000?logo=nextdotjs&logoColor=white)
@@ -113,7 +115,8 @@ flowchart LR
 - Security-Header, CORS nur für die eigene Domain, Rate-Limiting pro IP, Ausgabelimit beim KI-Anbieter.
 
 **DSGVO**
-- Verarbeitung ausschließlich in der EU: Supabase in Frankfurt, Railway in der EU, Mistral als europäischer Anbieter.
+- Daten und Verarbeitung in der EU: Supabase in Frankfurt, Railway in der EU-Region, Vercel-Funktionen in Frankfurt, Mistral als europäischer Anbieter.
+- Impressum und Datenschutzerklärung als eigene Seiten. Die Anbieterangaben kommen aus Umgebungsvariablen und stehen nicht im Repository.
 - **Löschen (Art. 17):** Quellen, Notebooks und Chatverläufe werden samt Dateien und Vektoren vollständig entfernt.
 - **Export (Art. 20):** Alle eigenen Daten als JSON.
 - Dokumentinhalte, Prompts und Antworten werden nie geloggt.

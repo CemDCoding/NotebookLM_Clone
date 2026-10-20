@@ -50,6 +50,7 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M0-API-01 | NestJS-Grundgerüst | M0 | API | W2 | M0-OPS-01, M0-SH-01 | L | fertig |
 | M0-WEB-01 | Next.js-Grundgerüst und Design-System | M0 | WEB | W2 | M0-OPS-01 | L | fertig |
 | M0-API-02 | Datenbank, Health und Fehlerformat | M0 | API | W3 | M0-API-01, M0-SH-01, H-03 | M | fertig |
+| M0-WEB-02 | App-Name, Impressum und Datenschutz | M0 | WEB | W4 | M0-WEB-01 | S | fertig |
 | M0-DEP-01 | Deployment M0 | M0 | HUM | W4 | alle M0, H-04 bis H-07 | H | offen |
 | M1-SH-01 | Notebook-Verträge | M1 | SH | W1 | M0-DEP-01 | S | offen |
 | M1-API-01 | Gerüst M1: Schema `notebooks`, Modul-Stubs, Decorators | M1 | API | W1 | M0-DEP-01 | M | offen |
@@ -239,7 +240,7 @@ flowchart LR
 | **SH** – Shared/Verträge | Zod-Schemas, API-Typen, SSE-Events, Konstanten. Läuft in jeder Welle **vor** den Paketen, die den Vertrag nutzen. | `packages/shared/**` |
 | **API** – Backend | NestJS-Module, Datenbank, Worker, Provider-Schicht | `apps/api/**` |
 | **WEB** – Frontend | Next.js-Seiten, Features, UI | `apps/web/**` (ohne `e2e/`, `vercel.json`) |
-| **OPS** – Infrastruktur und Doku | Tooling im Root, Deployment-Konfiguration, ADRs, README, E2E-Test, Doku | Root-Konfiguration, `railway.json`, `apps/web/vercel.json`, `apps/web/e2e/**`, `docs/**` |
+| **OPS** – Infrastruktur und Doku | Tooling im Root, Deployment-Konfiguration, ADRs, README, E2E-Test, Doku | Root-Konfiguration, `apps/web/vercel.json`, `apps/web/e2e/**`, `docs/**` |
 | **HUM** – Mensch | Konten, Secrets, Worktrees, Merges, Commits, Deployments, Smoke-Tests, Loom | keine Dateien, außer `docs/devlog.md` und README-Stand in den `DEP`-Paketen |
 
 ### Regeln für gemeinsam genutzte Dateien
@@ -413,14 +414,14 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 | W1 | M0-OPS-01, M0-OPS-02, M0-OPS-03, M0-SH-01 |
 | W2 | M0-API-01, M0-WEB-01 |
 | W3 | M0-API-02 |
-| W4 | M0-DEP-01 [Mensch] |
+| W4 | M0-WEB-02, danach M0-DEP-01 [Mensch] |
 
 **Integration:** Nach W1 ist `pnpm lint`, `typecheck` und `test` erstmals über das Root-Tooling grün. Nach W2 gilt das auch für beide Apps. Nach W3 meldet `curl localhost:4000/health` `200`.
 
 #### M0-DEP-01 – Deployment M0 [Mensch]
 
 - Vorbedingungen: H-04 bis H-07.
-- Railway: Projekt mit `railway.json` aus M0-OPS-03, Variablen laut `apps/api/.env.example` (`docs/deployment.md` „API auf Railway“).
+- Railway: Service-Einstellungen im Dashboard laut `docs/deployment.md` „API auf Railway“ (die `railway.json` aus M0-OPS-03 ist entfallen, siehe dort), Variablen laut `apps/api/.env.example` (`docs/deployment.md` „API auf Railway“).
 - Vercel: Root `apps/web`, Variablen laut `apps/web/.env.example` (`docs/deployment.md` „Web auf Vercel“).
 - **Smoke-Test:**
   - [ ] Vercel-URL zeigt die Startseite ohne Konsolenfehler.
@@ -661,6 +662,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Aufwand:** S
 - **Kürzbar bei Zeitnot:** nein. Ohne diese Dateien muss alles im Dashboard gesetzt werden, und das ist nicht reviewbar.
 - **Commit-Vorschlag:** `chore(deploy): add railway and vercel configuration`
+- **Nachtrag (M0-DEP-01):** `railway.json` wurde wieder entfernt. Railway liest Config as Code für neue Services nicht mehr. Die Werte stehen jetzt als Dashboard-Referenz in `docs/deployment.md` „API auf Railway“.
 
 #### M0-SH-01 – Shared-Basis: Fehlerformat, Limits, Health
 
@@ -775,6 +777,20 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Kürzbar bei Zeitnot:** nein
 - **Commit-Vorschlag:** `feat(api): add drizzle database module, health check and global error filter`
 
+#### M0-WEB-02 – App-Name, Impressum und Datenschutz
+
+- **Meilenstein, Lane, Welle:** M0 · WEB · W4, vor dem ersten Vercel-Deployment nachträglich ergänzt
+- **Ziel:** Die Seite geht mit Impressum und Datenschutzerklärung online, unter einem eigenen Namen statt der Marke „NotebookLM“.
+- **Anlass:** Beim Einrichten von Vercel (H-07) fiel auf, dass Domain und Startseite die Marke von Google als eigenen Produktnamen verwendet hätten und eine öffentliche Seite ohne Impressum und Datenschutzerklärung online gegangen wäre.
+- **Dateien:** `apps/web/src/app/page.tsx` (+ Test), `apps/web/src/app/layout.tsx`, `apps/web/src/app/impressum/**`, `apps/web/src/app/datenschutz/**`, `apps/web/src/components/site-footer.tsx`, `apps/web/src/features/legal/**`, `apps/web/.env.example`
+- **Umsetzung:**
+  1. Sichtbarer Name „Quellenchat“, Markenhinweis im Footer.
+  2. `features/legal/legal-contact.ts` liest `IMPRESSUM_*` per Zod. Fehlt etwas, bricht der Vercel-Produktions-Build ab. Lokal und in Previews erscheint ein Hinweis.
+  3. Seiten `/impressum` und `/datenschutz` als statische Server Components, verlinkt im `SiteFooter`.
+- **Tests:** `legal-contact` (vollständig, fehlend, leer, Abbruch in Produktion ohne Werte im Fehlertext), Impressum mit und ohne Angaben, Footer-Links der Startseite.
+- **Doku-Pflichten:** `CLAUDE.md` §1, §2, §7, `apps/web/CLAUDE.md`, `docs/deployment.md`
+- **Commit-Vorschlag:** `feat(web): add legal notice and privacy policy, rename app to quellenchat`
+
 ### M1 – Login und Notebooks
 
 #### M1-SH-01 – Notebook-Verträge
@@ -835,7 +851,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Umsetzung:**
   1. Dependencies `@supabase/ssr` und `@supabase/supabase-js`. Browser- und Server-Client nach der Doku der installierten Version.
   2. `proxy.ts`: Session erneuern. Nicht angemeldete Nutzer auf `(app)`-Routen leitet er auf `/login` um, angemeldete auf `/login` nach `/notebooks`.
-  3. Login-Seite: nur E-Mail und Passwort, deutsche Fehlermeldung, Hinweis „Zugänge werden vom Betreiber vergeben“. Keine Platzhalter mit echten Adressen.
+  3. Login-Seite: nur E-Mail und Passwort, deutsche Fehlermeldung, Hinweis „Zugänge werden vom Betreiber vergeben“. Keine Platzhalter mit echten Adressen. Unten der `SiteFooter` aus `components/site-footer.tsx` (M0-WEB-02).
   4. `(app)/layout.tsx`: schlanker Header mit App-Name und Abmelden-Button (`features/auth/logout-button.tsx`).
   5. `api-client.ts`: `apiFetch(path, { schema, method, body, signal })`. Er hängt den Bearer-Token an, parst die Antwort mit dem Zod-Schema und wirft bei Fehlern einen `ApiError` mit Status, `code` und `message` aus `ErrorResponseSchema`. Bei `401` erneuert er die Session einmal, sonst leitet er zum Login um.
   6. Startseite: angemeldet → Weiterleitung auf `/notebooks`.
@@ -1725,7 +1741,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 | H-03 | Supabase-Projekt `notebooklm-dev` nach `docs/deployment.md` „Einrichtung Supabase“ einrichten: Frankfurt, Registrierung aus, asymmetrische JWT-Schlüssel, privater Bucket `sources`. `apps/api/.env` und `apps/web/.env.local` füllen. | vor M0-W3 | M0-API-02 |
 | H-04 | Supabase-Projekt `notebooklm-prod`, gleiche Einrichtung | vor M0-DEP-01 | M0-DEP-01 |
 | H-05 | Mistral-Konto, API-Key, **monatliches Ausgabelimit** setzen, Key in dev-`.env` eintragen. Die Config verlangt ihn ab M0 (PE-03). | vor M0-W2-Integration | M0-Integration, M0-DEP-01 |
-| H-06 | Railway-Projekt in der EU-Region mit dem GitHub-Repo verbinden, als Deploy-Branch **`master`** wählen, `railway.json` nutzen, Variablen setzen | vor M0-DEP-01 | M0-DEP-01 |
+| H-06 | Railway-Projekt in der EU-Region mit dem GitHub-Repo verbinden, als Deploy-Branch **`master`** wählen, Service-Einstellungen laut `docs/deployment.md` „API auf Railway“ im Dashboard setzen (Config as Code ist abgekündigt), Variablen setzen | vor M0-DEP-01 | M0-DEP-01 |
 | H-07 | Vercel-Projekt mit Root `apps/web` und Production Branch **`master`**, Variablen setzen. Die Vercel-Domain anschließend als `WEB_ORIGIN` in Railway eintragen. | vor M0-DEP-01 | M0-DEP-01 |
 | H-08 | **Pro Welle:** Schritte 0–7 aus Abschnitt 6 „Ablauf einer Welle“ abarbeiten: Worktrees anlegen, Agents starten, Berichte prüfen, committen, mergen, Integrationspunkt, aufräumen | ab M0-W1, laufend | jede folgende Welle |
 | H-09 | Demo-Zugangsdaten festlegen, nur in der lokalen `apps/api/.env` und `apps/api/.env.production`. Seed gegen dev (nach M1-W2) und prod (M1-DEP-01) ausführen. | M1-W2 | M1-DEP-01 |
@@ -1883,6 +1899,7 @@ Mit K1 bis K6 sinkt deine Zeit auf ca. 20 h, dann allerdings ohne Puffer. Ein fr
 | Modellwahl (Mistral live, Ollama lokal) | M4-API-02, M4-WEB-03, H-10 |
 | Löschen von Quelle, Notebook, Verlauf inklusive Dateien und Vektoren | M2-API-04 (Quelle, Notebook, Storage), M3-API-01 (Cascade auf `chunks`), M4-API-06 (Verlauf), M4-API-01 (Cascade auf `messages`) |
 | Export aller eigenen Daten als JSON | M5-SH-01, M5-API-02, M5-WEB-02 |
+| Impressum und Datenschutzerklärung, Footer der öffentlichen Seiten | M0-WEB-02, M1-WEB-01 (Footer auf der Login-Seite), Prüfung in M6 |
 | Optional: Spracheingabe (Technik per ADR) | M7-OPS-01, M7-WEB-01 |
 | Bewusst nicht im Umfang (Registrierung, E-Mail, Account-Löschung, andere Sprachen, Studio, URL-Import, Mobile, CI, Teams) | kein Paket setzt sie um. ADR 4 begründet sie (M6-OPS-02). |
 

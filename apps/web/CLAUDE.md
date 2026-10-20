@@ -16,10 +16,14 @@ apps/web/
 │   │   ├── (app)/notebooks/       # Notebook-Übersicht
 │   │   ├── (app)/notebooks/[id]/  # Notebook-Ansicht: Quellen + Chat
 │   │   ├── (app)/settings/        # Datenexport
+│   │   ├── impressum/             # Impressum (öffentlich)
+│   │   ├── datenschutz/           # Datenschutzerklärung (öffentlich)
 │   │   └── layout.tsx
 │   ├── components/
+│   │   ├── site-footer.tsx        # Footer der öffentlichen Seiten: Rechtliches, Markenhinweis
 │   │   └── ui/                    # shadcn/ui-Komponenten (generiert, nur gezielt anpassen)
 │   ├── features/
+│   │   ├── legal/                 # Anbieterangaben aus der Umgebung, Rahmen der Rechtsseiten
 │   │   ├── notebooks/
 │   │   ├── sources/
 │   │   ├── chat/
@@ -71,6 +75,12 @@ Im Frontend werden **nur** diese Variablen verwendet, dokumentiert in `apps/web/
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase-Projekt für die Anmeldung |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Öffentlicher Schlüssel für die Anmeldung |
 | `NEXT_PUBLIC_API_URL` | Basis-URL der NestJS-API |
+| `IMPRESSUM_NAME`, `IMPRESSUM_STREET`, `IMPRESSUM_CITY`, `IMPRESSUM_EMAIL` | Anbieterangaben für Impressum und Datenschutzerklärung. Nur serverseitig (kein `NEXT_PUBLIC_`), beim Build in die statischen Seiten gerendert. Fehlt eine davon, bricht der Produktions-Build auf Vercel (`VERCEL_ENV=production`) ab. |
+
+### Öffentliche Seiten und Rechtliches
+
+- Die öffentlichen Seiten (Start, Login, Impressum, Datenschutz) zeigen unten den `SiteFooter` mit den Links zu Impressum und Datenschutz.
+- Sichtbarer App-Name ist **Quellenchat**. „NotebookLM“ steht nur beschreibend im Markenhinweis.
 
 ### Texte
 
