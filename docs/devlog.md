@@ -87,5 +87,20 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - Railway-Logs ohne Secrets.
 - Konsole: einziger Fehler ist ein `404` beim Prefetch von `/login`. Die Login-Seite entsteht in M1-WEB-01, der Fehler verschwindet damit. Bewusst nicht mit `prefetch={false}` überdeckt.
 
+**M1 – Welle 1 (M1-SH-01, M1-API-01, M1-WEB-01)**
+- Drei Pakete parallel in eigenen Worktrees: Notebook-Verträge in `packages/shared`, Gerüst der API (Tabelle `notebooks` mit RLS ohne Policies, `@Public()`, `@CurrentUser()`, Modul-Stubs), Supabase-Login mit `proxy.ts`, Header mit Abmelden und typisiertem API-Client.
+- Vor dem Start entschieden: Ein dev-Nutzer wurde von Hand im Supabase-Dashboard angelegt, damit der Login schon vor dem Seed-Skript (M1-W2) testbar ist. Die Weiterleitung angemeldeter Nutzer von `/` übernimmt `proxy.ts`, damit Startseite und ihr Test unverändert bleiben.
+- `notebooks.user_id` verweist auf `auth.users` mit `ON DELETE CASCADE`. Löscht der Betreiber einen Account, verschwinden dessen Notebooks. Storage-Dateien erfasst die Kaskade nicht, das kommt ab M2 in die Betreiber-Doku. Festgehalten in `apps/api/CLAUDE.md`.
+- Abmelden nur lokal (`scope: 'local'`): Die Prüfer teilen sich den Demo-Account, ein globaler Logout würde alle abmelden.
+- Integrationspunkt: lint, typecheck und test grün, Migration ohne Änderung. Handtest gegen dev: Login, Weiterleitungen in beide Richtungen, deutsche Fehlermeldung bei falschem Passwort, kein `404` mehr beim Prefetch von `/login`. Den Logout-Button gibt es erst mit einer Seite unter `(app)` (M1-WEB-02), ersatzweise wurde das Löschen der Session-Cookies geprüft.
+- RLS selbst gemessen statt dem Bericht geglaubt: Probe-Zeile angelegt, über die Supabase Data API mit dem publishable Key gelesen (0 Zeilen, Anlegen mit `401`/`42501` abgewiesen), danach gelöscht. Ein leeres Ergebnis auf einer leeren Tabelle hätte nichts bewiesen.
+
+**Probleme und Erkenntnisse (M1-W1)**
+- Auf C: waren nur noch 218 MB frei, weil `%TEMP%` und Windows-Systemdateien dort liegen. Mit `powercfg /h off` kamen 6,8 GB zurück. Die Auslagerungsdatei wuchs während der drei parallelen Agents um 2,5 GB.
+- Ein API-Test war bei einem Agent unter Last rot. Am Integrationspunkt lief er grün, erst damit war die Vermutung „Last“ belegt.
+- Der erwartete Lockfile-Konflikt blieb aus. Ob der automatische Merge stimmig war, zeigte erst `pnpm install` ohne Änderung am Lockfile.
+- Leere Worktree-Ordner ließen sich nicht löschen („Device or resource busy“), solange ihre Agent-Sitzungen in der App nicht archiviert waren.
+- Notiert für später: Standardrechte von `anon`/`authenticated` auf den Tabellen entziehen, darunter `TRUNCATE`, das RLS nicht erfasst (M5-API-01). Meldung des Abmelden-Buttons, wenn der Widerruf am Server scheitert (M5-WEB-01). Der Prod-Seed darf nicht auf die dev-`.env` zurückfallen (M1-API-04).
+
 **Nächster Schritt**
-- M1 – Login und Notebooks, Welle 1: M1-SH-01, M1-API-01, M1-WEB-01.
+- M1 – Welle 2: M1-API-02, M1-API-03, M1-API-04, M1-WEB-02. Vorher Neustart (Auslagerungsdatei) und H-09.
