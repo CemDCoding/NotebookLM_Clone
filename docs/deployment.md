@@ -13,6 +13,7 @@ Dieses Dokument beschreibt Umgebungen, Einrichtung und Deployment des NotebookLM
 
 - Für die Entwicklung gibt es ein **eigenes Supabase-Cloud-Projekt**. Es braucht kein Docker und verhält sich identisch zur Produktion.
 - Die Projekte teilen nie Schlüssel oder Daten.
+- **Bewusst ohne Staging-Umgebung** (ADR 4): Supabase Free erlaubt nur zwei aktive Projekte, ein drittes wäre kostenpflichtig. Eine Staging-API gegen `notebooklm-dev` scheidet aus, weil ihr Ingestion-Worker Jobs aus derselben pg-boss-Queue ziehen würde wie die lokale API. Stattdessen prüft der Integrationspunkt auf `dev` alle Pakete zusammen gegen die echte Datenbank, und nach jedem Deployment folgt ein Smoke-Test (Abschnitt „Ablauf pro Meilenstein“). Fehler fängt das Rollback ab. In einem Produktivbetrieb käme eine Staging-Umgebung mit eigener Datenbank hinzu.
 - Lokal kann zusätzlich **Ollama** für Chat-Modelle genutzt werden. Embeddings laufen auch lokal über Mistral.
 
 ---

@@ -51,6 +51,7 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - Mistral im kostenpflichtigen Plan statt im kostenlosen, damit hochgeladene Inhalte nicht ins Training fließen. Monatliches Ausgabelimit 10 €.
 - Zeilenenden per `.gitattributes` einheitlich auf LF.
 - pnpm 12 verlangt eine Entscheidung für jedes Paket mit Build-Skript: `esbuild` und `@swc/core` freigegeben, `unrs-resolver` bewusst abgelehnt.
+- **Keine Staging-Umgebung.** Erwogen wurde ein zusätzlicher Branch `stage` mit eigenem Deployment zwischen `dev` und `master`. Verworfen aus drei Gründen: Supabase Free erlaubt nur zwei aktive Projekte, ein drittes wäre kostenpflichtig. Eine Staging-API gegen die dev-Datenbank würde ab M3 Ingestion-Jobs aus derselben pg-boss-Queue ziehen wie die lokale API, sodass lokal hochgeladene Quellen von älterem Staging-Code verarbeitet werden könnten. Außerdem kostet jede zusätzliche Stufe pro Meilenstein ein weiteres Deployment samt Smoke-Test, bei ohnehin knappem Zeitbudget. Ersatz: Integrationspunkt auf `dev` gegen die echte dev-Datenbank, Smoke-Test nach jedem Produktions-Deployment, Rollback über Vercel und Railway. Festgehalten in `CLAUDE.md` §2 und §13 (ADR 4) sowie in `docs/deployment.md`.
 
 **Probleme und Erkenntnisse**
 - Supabase bot beim Anlegen zunächst nur „Europe“ an und wählte damit Irland. Die Region lässt sich nachträglich nicht ändern, deshalb wurde das Projekt gezielt in Frankfurt neu angelegt. Aufgefallen ist das über den Host des Connection-Strings.
@@ -64,5 +65,8 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - `drizzle-kit` ist eine devDependency, wird auf Railway aber beim Start für die Migration gebraucht.
 - Prüfen, ob `trust proxy` mit einem Hop zu Railway passt, damit das Rate-Limit pro IP greift.
 
+**Stand M0-DEP-01**
+- Erledigt: Supabase `notebooklm-prod` in Frankfurt (H-04), `dev` nach `master` gemergt und gepusht. Noch ohne Deployment, weil Railway und Vercel noch nicht verbunden sind.
+
 **Nächster Schritt**
-- M0-DEP-01: Supabase `notebooklm-prod` (H-04), Railway (H-06), Vercel (H-07), `dev` nach `master`, Smoke-Test live.
+- Railway (H-06), Vercel (H-07), danach Smoke-Test live und README-Stand „M0 live“.

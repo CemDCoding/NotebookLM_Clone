@@ -66,6 +66,7 @@ Nutzer sammeln eigene Dokumente in **Notebooks** und sprechen anschließend mit 
 - Webseiten als Quelle (URL-Import).
 - Mobile Optimierung. Die App ist für Desktop ausgelegt.
 - CI-Pipeline.
+- Staging-Umgebung. Geprüft wird am Integrationspunkt gegen `notebooklm-dev` und per Smoke-Test nach jedem Deployment (Abschnitt 8).
 - Teams, geteilte Notebooks, Rollen.
 
 Jede dieser Vereinfachungen ist in ADR 4 begründet (Abschnitt 13). Neue Funktionen außerhalb dieser Liste werden nicht ohne Rückfrage begonnen.
@@ -415,6 +416,7 @@ Format `NNNN-titel.md`, jeweils etwa eine halbe Seite mit Kontext, Entscheidung,
    - Chunking nach Zeichen statt nach Tokens
    - ein Prozess für API und Worker, exakte Vektorsuche
    - zwei Spalten ohne Studio-Funktionen, nur Desktop
+   - keine Staging-Umgebung: Ein drittes Supabase-Projekt wäre kostenpflichtig, und eine mit dev geteilte Datenbank würde pg-boss-Jobs zwischen den Umgebungen vermischen
 
 ### Devlog und KI-Workflow
 
