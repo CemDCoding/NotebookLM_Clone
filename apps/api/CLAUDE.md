@@ -207,6 +207,7 @@ Die Demo läuft mit `all`. Die Trennung kostet jetzt nur diese Weiche und erlaub
 - Das Drizzle-Schema in `src/db/schema.ts` ist die einzige Quelle der Tabellendefinitionen.
 - Migrationen werden mit `pnpm --filter api db:generate` erzeugt und vor dem Anwenden gelesen. Generierte Migrationen werden nicht von Hand geändert. Ausnahmen (`CREATE EXTENSION vector`, Aktivierung von RLS) stehen in einer eigenen, kommentierten SQL-Migration.
 - Jede neue Tabelle bekommt `user_id`, `ON DELETE CASCADE` auf den Elternschlüssel, aktiviertes RLS und Indizes auf den Spalten, nach denen gefiltert wird (mindestens `user_id`, bei `chunks` zusätzlich `notebook_id`).
+- `notebooks.user_id` verweist auf `auth.users(id)` mit `ON DELETE CASCADE`. Löscht der Betreiber einen Account, verschwinden dessen Notebooks samt allem, was daran hängt. Storage-Dateien erfasst die Kaskade nicht. `auth.users` ist in `schema.ts` nur als Ziel des Fremdschlüssels deklariert und wird nicht exportiert, damit drizzle-kit die Tabelle nie anlegt oder ändert. Folge für Tests und Skripte, die direkt in die Datenbank schreiben: Sie brauchen einen echten Nutzer.
 - Ausnahme `usage_events`: kein Elternschlüssel, `user_id` nullable, Index auf `(kind, created_at)` und `(user_id, kind, created_at)` für die Limit-Abfragen. RLS ist auch hier aktiviert.
 - pg-boss legt sein eigenes Schema `pgboss` an. Es wird nicht über Drizzle verwaltet.
 
