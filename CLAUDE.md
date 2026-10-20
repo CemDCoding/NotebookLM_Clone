@@ -369,6 +369,7 @@ pnpm install                    # Abhängigkeiten installieren
 pnpm dev                        # Shared (Watch), Web und API parallel starten
 pnpm build                      # Alle Pakete bauen
 pnpm lint                       # ESLint in allen Paketen
+pnpm format                     # Code mit Prettier formatieren (pnpm format:check prüft nur)
 pnpm typecheck                  # tsc --noEmit in allen Paketen
 pnpm test                       # Vitest in allen Paketen
 pnpm test:e2e                   # Playwright-E2E-Test gegen die Entwicklungsumgebung

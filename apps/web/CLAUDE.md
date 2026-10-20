@@ -32,7 +32,7 @@ apps/web/
 └── e2e/                           # Playwright-Test
 ```
 
-`proxy.ts` ist seit Next.js 16 der Name der früheren `middleware.ts`. Maßgeblich ist die in `package.json` installierte Version.
+`proxy.ts` ist seit Next.js 16 der Name der früheren `middleware.ts`. Maßgeblich ist die in `package.json` installierte Version. Die dazu passende Next.js-Dokumentation liegt nach `pnpm install` unter `apps/web/node_modules/next/dist/docs/`. Sie hat Vorrang vor älterem Wissen über Next.js (Risiko R12 im Build-Plan).
 
 Ein Feature-Ordner enthält alles Fachliche zu seinem Thema: Komponenten, Query-Hooks und kleine Hilfsfunktionen. Geteilte, fachfreie Bausteine liegen in `components/`.
 

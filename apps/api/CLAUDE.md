@@ -59,10 +59,17 @@ Für Entwickler mit Spring-Hintergrund: Module entsprechen `@Configuration`-Einh
 
 ### Fehlerbehandlung
 
-- Fachliche Fehler sind eigene Exception-Klassen (z. B. `SourceLimitExceededError`). Ein globaler Exception-Filter übersetzt sie in einheitliche HTTP-Antworten:
+- Fachliche Fehler erben von `DomainError` (`common/errors/`), z. B. `NotFoundError` oder `LimitExceededError`. Ein globaler Exception-Filter übersetzt sie in einheitliche HTTP-Antworten nach `ErrorResponseSchema` aus `packages/shared`:
   ```json
-  { "statusCode": 404, "error": "NotFound", "message": "Notebook not found" }
+  {
+    "statusCode": 404,
+    "error": "NotFound",
+    "message": "Die angeforderte Ressource wurde nicht gefunden.",
+    "code": "NOT_FOUND"
+  }
   ```
+- `error` ist der englische Statusname, `message` ist immer deutscher, anzeigbarer Text (PE-23). Das optionale Feld `code` (`ErrorCode`) erlaubt dem Frontend die Unterscheidung ohne Textvergleich (PE-31).
+- Jede Antwort trägt den Header `X-Request-Id`. Ein gültiger eingehender Header wird übernommen, sonst erzeugt die API eine ID. Das Frontend kann sie bei Fehlern anzeigen (CORS gibt den Header frei).
 - Überschrittene Limits ergeben `429` mit einer Meldung, die das Frontend direkt anzeigen kann.
 - Interne Details (Stacktraces, SQL, Anbieter-Antworten) erreichen nie den Client.
 - Fremde oder nicht existierende Ressourcen ergeben einheitlich `404`.
@@ -92,7 +99,8 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 
 ### Logging
 
-- NestJS-Logger mit strukturierten Feldern (`sourceId`, `jobId`, `durationMs`).
+- NestJS-Logger mit strukturierten Feldern (`requestId`, `sourceId`, `jobId`, `durationMs`), PE-29.
+- Fehler loggt der Exception-Filter nur mit Fehlerklasse, Status und `requestId`, nie mit Meldung oder Stacktrace, weil diese Nutzerinhalte oder SQL enthalten können.
 - **Nie** Dokumentinhalte, Prompts, Antworten oder Tokens loggen (DSGVO).
 
 ---

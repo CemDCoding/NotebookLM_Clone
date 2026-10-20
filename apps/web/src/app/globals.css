@@ -1,0 +1,94 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/*
+ * The app is light mode only. shadcn components still carry `dark:` utilities; binding the
+ * variant to a `.dark` class that is never set keeps them inert, even when the OS prefers dark.
+ */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-heading: var(--font-geist-sans);
+  --font-serif: var(--font-instrument-serif);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * Design tokens: calm, bright surfaces, fine borders and a single blue accent for primary
+ * actions and citation markers. Components use these tokens only, never raw color values.
+ */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.006 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.006 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.006 265);
+
+  /* Blue accent: primary actions, focus rings and citation markers */
+  --primary: oklch(0.546 0.215 262.9);
+  --primary-foreground: oklch(0.985 0 0);
+  /* Soft blue surface, e.g. citation badges and selected items */
+  --primary-soft: oklch(0.97 0.014 254.6);
+  --primary-soft-foreground: oklch(0.488 0.217 264.4);
+
+  --secondary: oklch(0.97 0.003 265);
+  --secondary-foreground: oklch(0.21 0.006 265);
+  --muted: oklch(0.975 0.002 265);
+  --muted-foreground: oklch(0.52 0.012 265);
+  --accent: oklch(0.96 0.006 265);
+  --accent-foreground: oklch(0.21 0.006 265);
+  --destructive: oklch(0.577 0.245 27.3);
+
+  --border: oklch(0.925 0.004 265);
+  --input: oklch(0.905 0.005 265);
+  --ring: oklch(0.623 0.188 259.8);
+  --overlay: oklch(0.21 0.006 265 / 12%);
+
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans antialiased;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
