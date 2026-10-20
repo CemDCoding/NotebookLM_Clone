@@ -21,7 +21,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: 'NotebookLM-Klon',
+  title: 'Quellenchat',
   description: 'Sprich mit deinen eigenen Dokumenten. Jede Antwort mit prüfbaren Zitaten belegt.',
 };
 
