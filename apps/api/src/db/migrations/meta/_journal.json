@@ -8,6 +8,20 @@
       "when": 1792487406630,
       "tag": "0000_enable_pgvector",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792503317352,
+      "tag": "0001_create_notebooks",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792503323923,
+      "tag": "0002_enable_rls_notebooks",
+      "breakpoints": true
     }
   ]
 }
