@@ -381,6 +381,7 @@ pnpm test:e2e                   # Playwright-E2E-Test gegen die Entwicklungsumge
 pnpm --filter api db:generate   # Drizzle-Migration aus dem Schema erzeugen
 pnpm --filter api db:migrate    # Migrationen anwenden
 pnpm --filter api db:seed       # Demo-Account und Demo-Notebook anlegen bzw. zurücksetzen
+pnpm --filter api db:seed:prod  # Dasselbe gegen Produktion, liest apps/api/.env.production (nur lokal)
 ```
 
 **Vor dem Abschluss jeder Aufgabe** müssen `pnpm lint`, `pnpm typecheck` und `pnpm test` fehlerfrei laufen.

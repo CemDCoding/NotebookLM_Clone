@@ -1,12 +1,14 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import type { HealthResponse } from '@notebooklm/shared';
 import type { Response } from 'express';
+import { Public } from '../common/decorators';
 import { HealthService } from './health.service';
 
 /**
- * Health check for Railway (apps/api/CLAUDE.md "health"). Public; from M1 on it
- * is marked with `@Public()` so the auth guard lets it through.
+ * Health check for Railway (apps/api/CLAUDE.md "health"). The only public
+ * endpoint: Railway's health check sends no token.
  */
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}

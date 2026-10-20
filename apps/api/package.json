@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:seed:prod": "tsx --env-file=.env.production src/db/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.3",
@@ -19,8 +21,10 @@
     "@nestjs/platform-express": "^12.1.3",
     "@nestjs/throttler": "^6.7.1",
     "@notebooklm/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.118.0",
     "drizzle-orm": "^0.45.4",
     "helmet": "^8.3.0",
+    "jose": "^6.2.12",
     "postgres": "^3.4.9",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
