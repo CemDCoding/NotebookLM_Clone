@@ -11,11 +11,12 @@ const geistSans = Geist({
   variable: '--font-geist-sans',
 });
 
-// Serif face for italic highlights in headings.
+// Serif face for italic highlights in headings. Only the italic style is used,
+// so loading the upright one would preload a font file that never renders.
 const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
   weight: '400',
-  style: ['normal', 'italic'],
+  style: 'italic',
   variable: '--font-instrument-serif',
 });
 
