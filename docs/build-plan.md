@@ -43,13 +43,13 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 
 | ID | Titel | M | Lane | Welle | Abhängigkeiten | Aufwand | Status |
 |---|---|---|---|---|---|---|---|
-| M0-OPS-01 | Workspace-Tooling | M0 | OPS | W1 | H-01, H-02 | M | offen |
-| M0-OPS-02 | ADRs 0001–0003 und README-Stand | M0 | OPS | W1 | – | M | offen |
-| M0-OPS-03 | Deployment-Konfiguration als Code | M0 | OPS | W1 | – | S | offen |
-| M0-SH-01 | Shared-Basis: Fehlerformat, Limits, Health | M0 | SH | W1 | H-01 | S | offen |
-| M0-API-01 | NestJS-Grundgerüst | M0 | API | W2 | M0-OPS-01, M0-SH-01 | L | offen |
-| M0-WEB-01 | Next.js-Grundgerüst und Design-System | M0 | WEB | W2 | M0-OPS-01 | L | offen |
-| M0-API-02 | Datenbank, Health und Fehlerformat | M0 | API | W3 | M0-API-01, M0-SH-01, H-03 | M | offen |
+| M0-OPS-01 | Workspace-Tooling | M0 | OPS | W1 | H-01, H-02 | M | fertig |
+| M0-OPS-02 | ADRs 0001–0003 und README-Stand | M0 | OPS | W1 | – | M | fertig |
+| M0-OPS-03 | Deployment-Konfiguration als Code | M0 | OPS | W1 | – | S | fertig |
+| M0-SH-01 | Shared-Basis: Fehlerformat, Limits, Health | M0 | SH | W1 | H-01 | S | fertig |
+| M0-API-01 | NestJS-Grundgerüst | M0 | API | W2 | M0-OPS-01, M0-SH-01 | L | fertig |
+| M0-WEB-01 | Next.js-Grundgerüst und Design-System | M0 | WEB | W2 | M0-OPS-01 | L | fertig |
+| M0-API-02 | Datenbank, Health und Fehlerformat | M0 | API | W3 | M0-API-01, M0-SH-01, H-03 | M | fertig |
 | M0-DEP-01 | Deployment M0 | M0 | HUM | W4 | alle M0, H-04 bis H-07 | H | offen |
 | M1-SH-01 | Notebook-Verträge | M1 | SH | W1 | M0-DEP-01 | S | offen |
 | M1-API-01 | Gerüst M1: Schema `notebooks`, Modul-Stubs, Decorators | M1 | API | W1 | M0-DEP-01 | M | offen |
