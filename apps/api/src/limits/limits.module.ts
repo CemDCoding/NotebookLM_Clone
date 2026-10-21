@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
+import { LimitsRepository } from './limits.repository';
+import { LimitsService } from './limits.service';
 
 /**
  * Central check of all business limits, counted in the database
- * (apps/api/CLAUDE.md "limits"). Scaffold stub (PE-02); M1-API-03 fills it.
+ * (apps/api/CLAUDE.md "limits").
  */
-@Module({})
+@Module({
+  providers: [LimitsService, LimitsRepository],
+  exports: [LimitsService],
+})
 export class LimitsModule {}
