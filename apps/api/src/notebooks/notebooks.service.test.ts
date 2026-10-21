@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { asRepositories, InMemoryNotebooks } from '../../test/support/in-memory-notebooks';
 import { LimitExceededError, NotFoundError } from '../common/errors';
 import type { LimitsService } from '../limits/limits.service';
+import type { SourcesService } from '../sources/sources.service';
 import { NotebooksService } from './notebooks.service';
 
 const USER = '0b6c3f1e-1d2a-4c3b-9e4f-5a6b7c8d9e0f';
@@ -12,13 +13,20 @@ const MISSING_ID = '00000000-0000-4000-8000-000000000000';
 describe('NotebooksService', () => {
   let store: InMemoryNotebooks;
   let assertCanCreateNotebook: ReturnType<typeof vi.fn<(userId: string) => Promise<void>>>;
+  let removeNotebookFiles: ReturnType<
+    typeof vi.fn<(userId: string, notebookId: string) => Promise<void>>
+  >;
   let service: NotebooksService;
 
   beforeEach(() => {
     store = new InMemoryNotebooks();
     assertCanCreateNotebook = vi.fn<(userId: string) => Promise<void>>().mockResolvedValue();
+    removeNotebookFiles = vi
+      .fn<(userId: string, notebookId: string) => Promise<void>>()
+      .mockResolvedValue();
     const limits = { assertCanCreateNotebook } as unknown as LimitsService;
-    service = new NotebooksService(asRepositories(store).notebooks, limits);
+    const sources = { removeNotebookFiles } as unknown as SourcesService;
+    service = new NotebooksService(asRepositories(store).notebooks, limits, sources);
   });
 
   it('creates a notebook after checking the limit for that user', async () => {
@@ -68,6 +76,41 @@ describe('NotebooksService', () => {
     await service.delete(USER, created.id);
 
     await expect(service.list(USER)).resolves.toEqual([]);
+  });
+
+  it('removes the source files before the notebook row (PE-22)', async () => {
+    const created = await service.create(USER, 'Mit Quellen');
+    const order: string[] = [];
+    removeNotebookFiles.mockImplementation(async () => {
+      order.push(
+        `files, notebook still there: ${(await store.findById(USER, created.id)) !== undefined}`,
+      );
+    });
+
+    await service.delete(USER, created.id);
+
+    expect(removeNotebookFiles).toHaveBeenCalledWith(USER, created.id);
+    expect(order).toEqual(['files, notebook still there: true']);
+    await expect(store.findById(USER, created.id)).resolves.toBeUndefined();
+  });
+
+  it('keeps the notebook when its files cannot be removed, so the delete can be retried', async () => {
+    const created = await service.create(USER, 'Bleibt');
+    removeNotebookFiles.mockRejectedValueOnce(new Error('Storage unavailable'));
+
+    await expect(service.delete(USER, created.id)).rejects.toThrow('Storage unavailable');
+    await expect(service.get(USER, created.id)).resolves.toEqual(created);
+
+    await service.delete(USER, created.id);
+    await expect(service.list(USER)).resolves.toEqual([]);
+  });
+
+  it("touches no files when deleting another user's notebook", async () => {
+    const foreign = await service.create(OTHER_USER, 'Fremdes');
+
+    await expect(service.delete(USER, foreign.id)).rejects.toThrow(NotFoundError);
+
+    expect(removeNotebookFiles).not.toHaveBeenCalled();
   });
 
   describe.each([
