@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { AppModule } from '../../app.module';
 import { validateEnv } from '../../config';
+import { Public } from '../decorators';
 import { ZodValidationPipe } from './zod-validation.pipe';
 
 const ItemSchema = z.object({
@@ -85,6 +86,8 @@ describe('ZodValidationPipe', () => {
   });
 });
 
+// Public, so this test exercises the pipe and not the global auth guard of AppModule.
+@Public()
 @Controller('items')
 class ItemsController {
   @Post()
