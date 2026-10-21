@@ -180,7 +180,10 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 ### seed
 
 - `db:seed` legt den Demo-Account über die Supabase-Admin-API an, da die Registrierung abgeschaltet ist.
-- Das Skript ist idempotent: Es setzt das Passwort auf `DEMO_USER_PASSWORD` zurück, löscht die Notebooks des Demo-Accounts samt Storage-Dateien und legt das Demo-Notebook mit einer Beispielquelle neu an. Die Beispielquelle durchläuft die normale Ingestion.
+- Das Skript ist idempotent: Es sucht den Demo-Nutzer per E-Mail und verwendet ihn wieder, sonst legt es ihn bestätigt an. Es setzt das Passwort auf `DEMO_USER_PASSWORD` zurück, löscht alle Notebooks des Demo-Accounts und legt das leere Notebook „Demo: Einführung“ neu an, beides in einer Transaktion.
+- **Beispielquelle ab M3 (PE-17):** Ab M3 löscht das Skript auch die Storage-Dateien und legt eine Beispielquelle an (selbst verfasster Markdown-Text), die die normale Ingestion durchläuft. In M1 und M2 bleibt das Demo-Notebook leer.
+- **Umgebung:** Das Skript validiert nur die Variablen, die es braucht (`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DEMO_USER_*`). `db:seed` füllt fehlende Variablen aus `apps/api/.env`. `db:seed:prod` startet mit `--env-file=.env.production`; dann wird `apps/api/.env` nie gelesen, und eine fehlende Variable bricht den Seed mit ihrem Namen ab, ohne Werte.
+- Zu Beginn loggt das Skript den Host der Ziel-Datenbank und die öffentliche Supabase-Projekt-URL, damit sichtbar ist, ob dev oder prod betroffen ist. Gehören Datenbank und Supabase-URL zu verschiedenen Projekten, bricht es ab. E-Mail, Passwort und Schlüssel werden nie geloggt, nur IDs und Anzahlen.
 
 ### health
 
