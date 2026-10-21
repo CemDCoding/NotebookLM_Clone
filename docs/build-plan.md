@@ -1002,7 +1002,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Umsetzung:**
   1. Dependency `unpdf`, devDependency `@types/multer`.
   2. `sources` laut §4 (FK `notebook_id` mit Cascade, Indizes `user_id` und `notebook_id`).
-  3. `usage_events` laut `apps/api/CLAUDE.md „Datenbank“` (kein FK, `user_id` nullable, beide Indizes).
+  3. `usage_events` laut `apps/api/CLAUDE.md „Datenbank“` (kein FK zu `notebooks` oder `sources`, `user_id` nullable mit FK auf `auth.users` und `ON DELETE SET NULL`, beide Indizes).
   4. RLS-Migration für beide Tabellen. Gegen dev anwenden.
   5. Stubs `SourcesModule` und `StorageModule` registrieren.
   6. Prüfen, dass `unpdf` sich aus dem CJS-Build laden lässt. Wenn nicht, PE-19 anwenden.
