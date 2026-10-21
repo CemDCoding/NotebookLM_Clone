@@ -62,11 +62,11 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M1-DEP-01 | Deployment M1 | M1 | HUM | W3 | alle M1, H-09 | H | offen |
 | M2-SH-01 | Quellen-Verträge | M2 | SH | W1 | M1-DEP-01 | M | fertig |
 | M2-API-01 | Gerüst M2: Schema `sources`/`usage_events`, Modul-Stubs | M2 | API | W1 | M1-DEP-01 | M | fertig |
-| M2-API-02 | Storage-Service und Dateityp-Prüfung | M2 | API | W2 | M2-API-01 | M | in Arbeit |
-| M2-API-03 | Nutzungslimits mit `usage_events` | M2 | API | W2 | M2-API-01 | M | in Arbeit |
-| M2-WEB-01 | Notebook-Ansicht und Quellenliste | M2 | WEB | W2 | M2-SH-01 | L | in Arbeit |
-| M2-API-04 | Sources-Modul | M2 | API | W3 | M2-API-02, M2-API-03, M2-SH-01 | L | offen |
-| M2-WEB-02 | Quellen hinzufügen | M2 | WEB | W3 | M2-WEB-01 | M | offen |
+| M2-API-02 | Storage-Service und Dateityp-Prüfung | M2 | API | W2 | M2-API-01 | M | fertig |
+| M2-API-03 | Nutzungslimits mit `usage_events` | M2 | API | W2 | M2-API-01 | M | fertig |
+| M2-WEB-01 | Notebook-Ansicht und Quellenliste | M2 | WEB | W2 | M2-SH-01 | L | fertig |
+| M2-API-04 | Sources-Modul | M2 | API | W3 | M2-API-02, M2-API-03, M2-SH-01 | L | in Arbeit |
+| M2-WEB-02 | Quellen hinzufügen | M2 | WEB | W3 | M2-WEB-01 | M | in Arbeit |
 | M2-DEP-01 | Deployment M2 | M2 | HUM | W4 | alle M2 | H | offen |
 | M3-API-01 | Gerüst M3: Schema `chunks`, Queue/LLM/Ingestion-Stubs | M3 | API | W1 | M2-DEP-01 | M | offen |
 | M3-WEB-01 | Status-Polling und Fehleranzeige | M3 | WEB | W1 | M2-DEP-01 | S | offen |
