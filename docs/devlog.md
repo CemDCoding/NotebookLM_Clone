@@ -104,3 +104,32 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 
 **Nächster Schritt**
 - M1 – Welle 2: M1-API-02, M1-API-03, M1-API-04, M1-WEB-02. Vorher Neustart (Auslagerungsdatei) und H-09.
+
+---
+
+## 2026-10-21 – Login und Notebooks
+
+**Meilenstein:** M1 – Welle 2 abgeschlossen, Deployment M1 steht aus
+
+**Umgesetzt (M1-W2: M1-API-02, M1-API-03, M1-API-04, M1-WEB-02)**
+- Globaler JWT-Guard: Signatur über die JWKS des Supabase-Projekts, Issuer, Audience `authenticated`, Pflicht-Claims `exp` und `sub`, nur `ES256`/`RS256`. Jede Ablehnung ist ein `401` ohne Grund. Ist die JWKS nicht erreichbar, antwortet die API mit `503`, damit ein Supabase-Ausfall die Nutzer nicht abmeldet.
+- Notebooks-CRUD im Schichtenmodell. Jede Abfrage filtert nach `user_id`, fremde Notebooks ergeben `404` wie nicht vorhandene. Das 26. Notebook ergibt `429` mit `LIMIT_EXCEEDED`.
+- Seed-Skript für den Demo-Account: idempotent, setzt das Passwort zurück, legt „Demo: Einführung“ neu an. `db:seed:prod` liest ausschließlich `.env.production` und bricht ab, wenn Datenbank und Supabase-URL zu verschiedenen Projekten gehören.
+- Notebook-Übersicht mit Anlegen, Umbenennen und Löschen samt Bestätigung, Skeleton, Leer- und Fehlerzustand.
+
+**Integrationspunkt**
+- Nach dem Merge waren zwei Tests der Validierungs-Pipe rot, weil der neue Guard deren Testcontroller korrekt mit `401` abwies. Gelöst mit `@Public()` am Testcontroller, vorher reproduziert, danach 8 von 8 grün.
+- Lint, Typecheck und Tests grün, Seed gegen dev erfolgreich.
+- Ownership gegen die echte Datenbank geprüft, weil die Agent-Tests nur einen In-Memory-Ersatz nutzen: Mit dem echten Repository sieht, ändert und löscht ein zweiter Nutzer das Notebook des ersten nicht. Dieselben Abfragen finden es für den Eigentümer, sonst hätte das „nicht gefunden“ nichts bewiesen.
+- `curl` gegen localhost: `/notebooks` ohne Token, mit gefälschtem und mit unsigniertem Token (`alg: none`) sowie `POST`, `PATCH` und `DELETE` ohne Token liefern `401`. `/health` bleibt öffentlich.
+- Handtest im Browser: Login mit dem Demo-Account zeigt „Demo: Einführung“. Anlegen, Umbenennen, Löschen mit Nachfrage, Tastaturbedienung und Abmelden funktionieren.
+
+**Probleme und Erkenntnisse**
+- `pnpm install` ist bei parallelen Wellen ein Engpass. Jeder Agent führt den Befehl zu Beginn in seinem eigenen Worktree aus, alle gleichzeitig. Bei drei parallelen Agents (M1-W1) dauerte der erste Install laut Bericht von M1-SH-01 rund 11 Minuten, bei vier (M1-W2) laut Bericht von M1-API-02 28 Minuten. Vermutete Ursache, nicht gemessen: Alle Worktrees teilen sich den pnpm-Store unter `D:\.pnpm-store` und konkurrieren um dieselbe Platte.
+- Idee für die nächsten Wellen, noch nicht erprobt: `pnpm install` in Schritt 1 direkt nach dem Anlegen jedes Worktrees nacheinander ausführen, bevor die Agents starten. Die Agents finden dann installierte Abhängigkeiten vor, und ihr eigener Install-Lauf ändert nichts mehr.
+- Der Build-Plan nannte Testdateien `*.spec.ts`, die Vitest-Konfiguration sammelt aber nur `*.test.ts`. Solche Tests wären still nie gelaufen. Zwei Agents haben das erkannt und ihre Dateien `*.test.ts` genannt.
+- Im ersten Handtest fehlte das Demo-Notebook. Die Ursache war kein Fehler: Angemeldet war der dev-Nutzer von gestern, nicht der Demo-Account. Belegt über den letzten Login pro Nutzer in der Datenbank, die Mandantentrennung hat dabei wie vorgesehen gegriffen.
+- Notiert für später: Ein abgemeldetes Token bleibt bis zu seinem Ablauf gültig, weil die API lokal über die JWKS prüft (ADR 4, M6-OPS-02). Fokus nach dem Löschen und das englische „Close“ im generierten Dialog (M5-WEB-01). `drizzle.config.ts` füllt bei einer Migration mit `--env-file` fehlende Variablen aus der dev-`.env` auf. Auf Railway ist das unkritisch, weil es dort keine `.env`-Datei gibt.
+
+**Nächster Schritt**
+- M1-DEP-01: `apps/api/.env.production` anlegen, `dev` nach `master`, Prod-Seed, Smoke-Test live.
