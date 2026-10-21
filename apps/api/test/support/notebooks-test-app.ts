@@ -7,6 +7,7 @@ import { AllExceptionsFilter } from '../../src/common/filters';
 import { ZodValidationPipe } from '../../src/common/pipes/zod-validation.pipe';
 import type { AuthenticatedRequest } from '../../src/common/types';
 import { AppConfigService } from '../../src/config';
+import { LimitTransactions } from '../../src/limits/limit-transactions';
 import { LimitsRepository } from '../../src/limits/limits.repository';
 import { NotebooksModule } from '../../src/notebooks/notebooks.module';
 import { NotebooksRepository } from '../../src/notebooks/notebooks.repository';
@@ -55,6 +56,9 @@ export async function createNotebooksTestApp(
     .useValue(store)
     .overrideProvider(LimitsRepository)
     .useValue(store)
+    // Needs the database, which this app has none of. Notebook routes never use it.
+    .overrideProvider(LimitTransactions)
+    .useValue({})
     .compile();
 
   const app = moduleRef.createNestApplication({ logger: false });
