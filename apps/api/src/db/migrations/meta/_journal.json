@@ -22,6 +22,20 @@
       "when": 1792503323923,
       "tag": "0002_enable_rls_notebooks",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792600375089,
+      "tag": "0003_create_sources_and_usage_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792600387512,
+      "tag": "0004_enable_rls_sources_and_usage_events",
+      "breakpoints": true
     }
   ]
 }
