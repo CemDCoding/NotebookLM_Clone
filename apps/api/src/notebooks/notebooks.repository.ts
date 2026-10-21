@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import { type Database, DRIZZLE } from '../db/db.module';
-import { notebooks } from '../db/schema';
+import { notebooks, sources } from '../db/schema';
 
 /** A notebook as the service sees it: without the owner, plus its number of sources. */
 export interface NotebookRecord {
@@ -20,8 +20,6 @@ const columns = {
   updatedAt: notebooks.updatedAt,
 };
 
-type NotebookColumns = Omit<NotebookRecord, 'sourceCount'>;
-
 /**
  * All notebook queries. Every method takes the signed-in user's ID and filters
  * by it, so tenant isolation is enforced in this one place (apps/api/CLAUDE.md
@@ -31,18 +29,20 @@ type NotebookColumns = Omit<NotebookRecord, 'sourceCount'>;
 export class NotebooksRepository {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
-  async list(userId: string): Promise<NotebookRecord[]> {
-    const rows = await this.db
-      .select(columns)
+  list(userId: string): Promise<NotebookRecord[]> {
+    return this.db
+      .select(this.columnsWithSourceCount())
       .from(notebooks)
       .where(eq(notebooks.userId, userId))
       .orderBy(desc(notebooks.createdAt), desc(notebooks.id));
-    return rows.map(withSourceCount);
   }
 
   async findById(userId: string, id: string): Promise<NotebookRecord | undefined> {
-    const [row] = await this.db.select(columns).from(notebooks).where(ownedBy(userId, id));
-    return row && withSourceCount(row);
+    const [row] = await this.db
+      .select(this.columnsWithSourceCount())
+      .from(notebooks)
+      .where(ownedBy(userId, id));
+    return row;
   }
 
   async create(userId: string, title: string): Promise<NotebookRecord> {
@@ -50,7 +50,8 @@ export class NotebooksRepository {
     if (!row) {
       throw new Error('Insert into notebooks returned no row');
     }
-    return withSourceCount(row);
+    // A new notebook has no sources yet.
+    return { ...row, sourceCount: 0 };
   }
 
   /** `updated_at` is set by the schema's `$onUpdate`. */
@@ -60,7 +61,7 @@ export class NotebooksRepository {
       .set({ title })
       .where(ownedBy(userId, id))
       .returning(columns);
-    return row && withSourceCount(row);
+    return row && { ...row, sourceCount: await this.countSources(userId, id) };
   }
 
   /** Returns whether a notebook was deleted. Rows that depend on it follow by cascade. */
@@ -71,14 +72,27 @@ export class NotebooksRepository {
       .returning({ id: notebooks.id });
     return rows.length > 0;
   }
+
+  /**
+   * The notebook columns plus a correlated count of its sources, so a list
+   * takes one query instead of one per notebook. The count filters by the
+   * owner as well, like every source query.
+   */
+  private columnsWithSourceCount() {
+    return {
+      ...columns,
+      sourceCount: this.db.$count(
+        sources,
+        and(eq(sources.notebookId, notebooks.id), eq(sources.userId, notebooks.userId)),
+      ),
+    };
+  }
+
+  private countSources(userId: string, id: string): Promise<number> {
+    return this.db.$count(sources, and(eq(sources.notebookId, id), eq(sources.userId, userId)));
+  }
 }
 
 function ownedBy(userId: string, id: string): SQL | undefined {
   return and(eq(notebooks.id, id), eq(notebooks.userId, userId));
-}
-
-// The `sources` table arrives in M2 together with the real count. Until then
-// no notebook can have sources.
-function withSourceCount(row: NotebookColumns): NotebookRecord {
-  return { ...row, sourceCount: 0 };
 }

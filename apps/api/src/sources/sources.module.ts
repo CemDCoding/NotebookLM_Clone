@@ -1,8 +1,29 @@
 import { Module } from '@nestjs/common';
+import { MulterModule } from '@nestjs/platform-express';
+import { AppConfigService } from '../config';
+import { LimitsModule } from '../limits/limits.module';
+import { StorageModule } from '../storage/storage.module';
+import { SourcesController } from './sources.controller';
+import { SourcesRepository } from './sources.repository';
+import { SourcesService } from './sources.service';
+import { uploadOptions } from './upload-options';
 
 /**
  * Upload, pasted text, list, toggle and delete of sources
- * (apps/api/CLAUDE.md "sources und ingestion"). Filled in by M2-API-04.
+ * (apps/api/CLAUDE.md "sources und ingestion"). Exports the service so that
+ * deleting a notebook can remove its source files first (PE-22).
  */
-@Module({})
+@Module({
+  imports: [
+    LimitsModule,
+    StorageModule,
+    MulterModule.registerAsync({
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => uploadOptions(config.limits.maxFileSizeBytes),
+    }),
+  ],
+  controllers: [SourcesController],
+  providers: [SourcesService, SourcesRepository],
+  exports: [SourcesService],
+})
 export class SourcesModule {}

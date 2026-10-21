@@ -131,9 +131,10 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 
 ### sources und ingestion
 
-- Upload als `multipart/form-data`. Die Größe wird vor dem Einlesen begrenzt.
-- **Typprüfung nach Inhalt:** PDF anhand der Magic Bytes (`%PDF-`), Text und Markdown durch strikte UTF-8-Dekodierung. Bei PDFs wird die Seitenzahl gegen `MAX_PDF_PAGES` geprüft.
-- Ablauf: Limits prüfen → Datei in Storage (`{userId}/{sourceId}`) → Quelle mit Status `pending` → pg-boss-Job `ingest-source`. Eingefügter Text wird ohne Storage-Datei direkt gespeichert. Seine Länge prüft das Zod-Schema gegen `MAX_PASTED_TEXT_CHARS` (Standard 500.000).
+- Upload als `multipart/form-data` mit genau einer Datei im Feld `file` und ohne weitere Felder. Die Größe wird beim Einlesen begrenzt (`413`). Der Titel ist der Dateiname ohne Pfadanteile, gekürzt auf 200 Zeichen.
+- **Typprüfung nach Inhalt:** PDF anhand der Magic Bytes (`%PDF-`), Text und Markdown durch strikte UTF-8-Dekodierung. Bei PDFs wird die Seitenzahl gegen `MAX_PDF_PAGES` geprüft (`413`).
+- Ablauf (PE-16): Notebook-Ownership → Typ und Seiten → Limits prüfen und Nutzungsereignis schreiben → Datei in Storage (`{userId}/{sourceId}`) → Quelle mit Status `pending` → pg-boss-Job `ingest-source` (ab M3). Eine abgelehnte Datei verbraucht so kein Tageskontingent. Scheitert das Anlegen der Zeile, wird die Datei wieder entfernt.
+- **Eingefügter Text** durchläuft denselben Weg: Er wird als UTF-8-Datei unter demselben Pfadschema `{userId}/{sourceId}` in Storage abgelegt. So gibt es einen einzigen Extraktionsweg für alle Quellen, und Löschen entfernt immer genau eine Datei. `storage_path` bleibt bei eingefügtem Text leer, der Speicherort ergibt sich aus dem Pfadschema. Die Länge prüft das Zod-Schema gegen den Standard von 500.000 Zeichen, ein niedrigeres `MAX_PASTED_TEXT_CHARS` der Service.
 - Der Worker setzt den Status auf `processing` und arbeitet dann diese Schritte ab:
   1. Text seitenweise extrahieren.
   2. Absatzbewusst in Abschnitte von ca. **3.000 Zeichen** mit ca. 400 Zeichen Überlappung zerlegen. Seite und Position bleiben erhalten. Gezählt wird in Zeichen statt in Tokens, damit kein modellabhängiger Tokenizer nötig ist.
@@ -142,7 +143,7 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
   5. Status auf `ready` setzen, bei Fehlern auf `failed` mit nutzerverständlicher Meldung.
 - **Parallelität ist begrenzt** (Standard 2 Jobs). Antwortet Mistral mit `429`, wartet der Worker mit exponentiellem Backoff. pg-boss wiederholt fehlgeschlagene Jobs bis zu dreimal.
 - Jobs sind idempotent: Ein erneuter Lauf löscht vorhandene Chunks der Quelle vor dem Neuschreiben.
-- Löschen einer Quelle entfernt Storage-Datei und Datenbankeintrag. Chunks folgen per Cascade.
+- Löschen einer Quelle entfernt erst die Storage-Datei, dann den Datenbankeintrag. Chunks folgen per Cascade. Löschen eines Notebooks entfernt erst die Dateien aller seiner Quellen, dann die Notebook-Zeile. Schlägt Storage fehl, bleibt die Datenbank unverändert und das Löschen kann wiederholt werden (PE-22).
 
 ### retrieval
 
