@@ -14,6 +14,8 @@ import { DbModule } from './db/db.module';
 import { HealthModule } from './health/health.module';
 import { LimitsModule } from './limits/limits.module';
 import { NotebooksModule } from './notebooks/notebooks.module';
+import { SourcesModule } from './sources/sources.module';
+import { StorageModule } from './storage/storage.module';
 
 // Coarse flood protection per IP, in memory (PE-28). The business limits are
 // counted in the database and apply on top of this. The German 429 message
@@ -24,9 +26,10 @@ const THROTTLE_LIMIT = 120;
 // Feature modules by RUN_MODE. Later milestones register their modules here.
 // The worker needs the database too and still answers `/health` for Railway.
 // Auth loads in every mode, so any controller is protected by default.
+// Storage serves both sides: the API uploads and deletes, the worker downloads.
 const MODULES: RunModeModules = {
-  always: [DbModule, AuthModule, HealthModule],
-  http: [LimitsModule, NotebooksModule],
+  always: [DbModule, AuthModule, HealthModule, StorageModule],
+  http: [LimitsModule, NotebooksModule, SourcesModule],
   worker: [],
 };
 
