@@ -873,7 +873,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „auth“`, „Tests“; `CLAUDE.md §7 „Authentifizierung und Autorisierung“`, `§11 „Tests“`; PE-19
 - **Abhängigkeiten:** M1-API-01
 - **Parallel möglich mit:** M1-API-03, M1-API-04, M1-WEB-02
-- **Dateien (Eigentum):** `apps/api/src/auth/**` (außer dem Modul-Stub, den das Paket aber ausfüllen darf), `apps/api/test/auth-guard.spec.ts`
+- **Dateien (Eigentum):** `apps/api/src/auth/**` (außer dem Modul-Stub, den das Paket aber ausfüllen darf), `apps/api/test/auth-guard.test.ts`
 - **Nicht anfassen:** `app.module.ts`. Die Registrierung erfolgt über `APP_GUARD` im `AuthModule`.
 - **Umsetzung:**
   1. `jose.createRemoteJWKSet(${SUPABASE_URL}/auth/v1/.well-known/jwks.json)`. `jwtVerify` prüft Issuer `${SUPABASE_URL}/auth/v1`, Audience `authenticated` und Ablauf.
@@ -897,7 +897,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md` „Struktur“ (Schichtenmodell), „limits“, „Fehlerbehandlung“, „Tests“; `CLAUDE.md §7`; PE-07, PE-22
 - **Abhängigkeiten:** M1-API-01, M1-SH-01
 - **Parallel möglich mit:** M1-API-02, M1-API-04, M1-WEB-02
-- **Dateien (Eigentum):** `apps/api/src/notebooks/**`, `apps/api/src/limits/**`, `apps/api/test/ownership.spec.ts`
+- **Dateien (Eigentum):** `apps/api/src/notebooks/**`, `apps/api/src/limits/**`, `apps/api/test/ownership.test.ts`
 - **Nicht anfassen:** `apps/api/src/auth/**`
 - **Umsetzung:**
   1. `NotebooksRepository`: jede Methode hat `userId` als Pflichtparameter. `sourceCount` liefert vorerst 0 (`sources` folgt in M2) oder lässt die Abfrage weg, mit TODO-freiem Kommentar.
@@ -1459,7 +1459,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „chat“` (ganz), „Logging“, „Tests“ (Abbruch); `CLAUDE.md §7 „Missbrauchsschutz“` (Abbruch); PE-07, PE-08, PE-09, PE-20, PE-30, PE-35
 - **Abhängigkeiten:** M4-API-02, M4-API-03, M4-API-04, M4-API-05
 - **Parallel möglich mit:** M4-WEB-03
-- **Dateien (Eigentum):** `apps/api/src/chat/**` außer `prompt/` und `citations/`, `apps/api/test/chat-abort.spec.ts`
+- **Dateien (Eigentum):** `apps/api/src/chat/**` außer `prompt/` und `citations/`, `apps/api/test/chat-abort.test.ts`
 - **Nicht anfassen:** `apps/api/src/llm/**`, `apps/api/src/retrieval/**`, `apps/api/src/limits/**`
 - **Umsetzung:**
   1. Reihenfolge nach PE-30: Notebook-Ownership, Modell auflösen, `hasReadyActiveSources` (sonst `409 NO_READY_SOURCES`), `acceptChat`, Retrieval, Prompt, Stream.
