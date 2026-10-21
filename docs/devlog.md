@@ -87,5 +87,49 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - Railway-Logs ohne Secrets.
 - Konsole: einziger Fehler ist ein `404` beim Prefetch von `/login`. Die Login-Seite entsteht in M1-WEB-01, der Fehler verschwindet damit. Bewusst nicht mit `prefetch={false}` überdeckt.
 
+**M1 – Welle 1 (M1-SH-01, M1-API-01, M1-WEB-01)**
+- Drei Pakete parallel in eigenen Worktrees: Notebook-Verträge in `packages/shared`, Gerüst der API (Tabelle `notebooks` mit RLS ohne Policies, `@Public()`, `@CurrentUser()`, Modul-Stubs), Supabase-Login mit `proxy.ts`, Header mit Abmelden und typisiertem API-Client.
+- Vor dem Start entschieden: Ein dev-Nutzer wurde von Hand im Supabase-Dashboard angelegt, damit der Login schon vor dem Seed-Skript (M1-W2) testbar ist. Die Weiterleitung angemeldeter Nutzer von `/` übernimmt `proxy.ts`, damit Startseite und ihr Test unverändert bleiben.
+- `notebooks.user_id` verweist auf `auth.users` mit `ON DELETE CASCADE`. Löscht der Betreiber einen Account, verschwinden dessen Notebooks. Storage-Dateien erfasst die Kaskade nicht, das kommt ab M2 in die Betreiber-Doku. Festgehalten in `apps/api/CLAUDE.md`.
+- Abmelden nur lokal (`scope: 'local'`): Die Prüfer teilen sich den Demo-Account, ein globaler Logout würde alle abmelden.
+- Integrationspunkt: lint, typecheck und test grün, Migration ohne Änderung. Handtest gegen dev: Login, Weiterleitungen in beide Richtungen, deutsche Fehlermeldung bei falschem Passwort, kein `404` mehr beim Prefetch von `/login`. Den Logout-Button gibt es erst mit einer Seite unter `(app)` (M1-WEB-02), ersatzweise wurde das Löschen der Session-Cookies geprüft.
+- RLS selbst gemessen statt dem Bericht geglaubt: Probe-Zeile angelegt, über die Supabase Data API mit dem publishable Key gelesen (0 Zeilen, Anlegen mit `401`/`42501` abgewiesen), danach gelöscht. Ein leeres Ergebnis auf einer leeren Tabelle hätte nichts bewiesen.
+
+**Probleme und Erkenntnisse (M1-W1)**
+- Auf C: waren nur noch 218 MB frei, weil `%TEMP%` und Windows-Systemdateien dort liegen. Mit `powercfg /h off` kamen 6,8 GB zurück. Die Auslagerungsdatei wuchs während der drei parallelen Agents um 2,5 GB.
+- Ein API-Test war bei einem Agent unter Last rot. Am Integrationspunkt lief er grün, erst damit war die Vermutung „Last“ belegt.
+- Der erwartete Lockfile-Konflikt blieb aus. Ob der automatische Merge stimmig war, zeigte erst `pnpm install` ohne Änderung am Lockfile.
+- Leere Worktree-Ordner ließen sich nicht löschen („Device or resource busy“), solange ihre Agent-Sitzungen in der App nicht archiviert waren.
+- Notiert für später: Standardrechte von `anon`/`authenticated` auf den Tabellen entziehen, darunter `TRUNCATE`, das RLS nicht erfasst (M5-API-01). Meldung des Abmelden-Buttons, wenn der Widerruf am Server scheitert (M5-WEB-01). Der Prod-Seed darf nicht auf die dev-`.env` zurückfallen (M1-API-04).
+
 **Nächster Schritt**
-- M1 – Login und Notebooks, Welle 1: M1-SH-01, M1-API-01, M1-WEB-01.
+- M1 – Welle 2: M1-API-02, M1-API-03, M1-API-04, M1-WEB-02. Vorher Neustart (Auslagerungsdatei) und H-09.
+
+---
+
+## 2026-10-21 – Login und Notebooks
+
+**Meilenstein:** M1 – Welle 2 abgeschlossen, Deployment M1 steht aus
+
+**Umgesetzt (M1-W2: M1-API-02, M1-API-03, M1-API-04, M1-WEB-02)**
+- Globaler JWT-Guard: Signatur über die JWKS des Supabase-Projekts, Issuer, Audience `authenticated`, Pflicht-Claims `exp` und `sub`, nur `ES256`/`RS256`. Jede Ablehnung ist ein `401` ohne Grund. Ist die JWKS nicht erreichbar, antwortet die API mit `503`, damit ein Supabase-Ausfall die Nutzer nicht abmeldet.
+- Notebooks-CRUD im Schichtenmodell. Jede Abfrage filtert nach `user_id`, fremde Notebooks ergeben `404` wie nicht vorhandene. Das 26. Notebook ergibt `429` mit `LIMIT_EXCEEDED`.
+- Seed-Skript für den Demo-Account: idempotent, setzt das Passwort zurück, legt „Demo: Einführung“ neu an. `db:seed:prod` liest ausschließlich `.env.production` und bricht ab, wenn Datenbank und Supabase-URL zu verschiedenen Projekten gehören.
+- Notebook-Übersicht mit Anlegen, Umbenennen und Löschen samt Bestätigung, Skeleton, Leer- und Fehlerzustand.
+
+**Integrationspunkt**
+- Nach dem Merge waren zwei Tests der Validierungs-Pipe rot, weil der neue Guard deren Testcontroller korrekt mit `401` abwies. Gelöst mit `@Public()` am Testcontroller, vorher reproduziert, danach 8 von 8 grün.
+- Lint, Typecheck und Tests grün, Seed gegen dev erfolgreich.
+- Ownership gegen die echte Datenbank geprüft, weil die Agent-Tests nur einen In-Memory-Ersatz nutzen: Mit dem echten Repository sieht, ändert und löscht ein zweiter Nutzer das Notebook des ersten nicht. Dieselben Abfragen finden es für den Eigentümer, sonst hätte das „nicht gefunden“ nichts bewiesen.
+- `curl` gegen localhost: `/notebooks` ohne Token, mit gefälschtem und mit unsigniertem Token (`alg: none`) sowie `POST`, `PATCH` und `DELETE` ohne Token liefern `401`. `/health` bleibt öffentlich.
+- Handtest im Browser: Login mit dem Demo-Account zeigt „Demo: Einführung“. Anlegen, Umbenennen, Löschen mit Nachfrage, Tastaturbedienung und Abmelden funktionieren.
+
+**Probleme und Erkenntnisse**
+- `pnpm install` ist bei parallelen Wellen ein Engpass. Jeder Agent führt den Befehl zu Beginn in seinem eigenen Worktree aus, alle gleichzeitig. Bei drei parallelen Agents (M1-W1) dauerte der erste Install laut Bericht von M1-SH-01 rund 11 Minuten, bei vier (M1-W2) laut Bericht von M1-API-02 28 Minuten. Vermutete Ursache, nicht gemessen: Alle Worktrees teilen sich den pnpm-Store unter `D:\.pnpm-store` und konkurrieren um dieselbe Platte.
+- Idee für die nächsten Wellen, noch nicht erprobt: `pnpm install` in Schritt 1 direkt nach dem Anlegen jedes Worktrees nacheinander ausführen, bevor die Agents starten. Die Agents finden dann installierte Abhängigkeiten vor, und ihr eigener Install-Lauf ändert nichts mehr.
+- Der Build-Plan nannte Testdateien `*.spec.ts`, die Vitest-Konfiguration sammelt aber nur `*.test.ts`. Solche Tests wären still nie gelaufen. Zwei Agents haben das erkannt und ihre Dateien `*.test.ts` genannt.
+- Im ersten Handtest fehlte das Demo-Notebook. Die Ursache war kein Fehler: Angemeldet war der dev-Nutzer von gestern, nicht der Demo-Account. Belegt über den letzten Login pro Nutzer in der Datenbank, die Mandantentrennung hat dabei wie vorgesehen gegriffen.
+- Notiert für später: Ein abgemeldetes Token bleibt bis zu seinem Ablauf gültig, weil die API lokal über die JWKS prüft (ADR 4, M6-OPS-02). Fokus nach dem Löschen und das englische „Close“ im generierten Dialog (M5-WEB-01). `drizzle.config.ts` füllt bei einer Migration mit `--env-file` fehlende Variablen aus der dev-`.env` auf. Auf Railway ist das unkritisch, weil es dort keine `.env`-Datei gibt.
+
+**Nächster Schritt**
+- M1-DEP-01: `apps/api/.env.production` anlegen, `dev` nach `master`, Prod-Seed, Smoke-Test live.

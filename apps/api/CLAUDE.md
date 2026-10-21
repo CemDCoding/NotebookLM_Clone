@@ -180,7 +180,10 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 ### seed
 
 - `db:seed` legt den Demo-Account über die Supabase-Admin-API an, da die Registrierung abgeschaltet ist.
-- Das Skript ist idempotent: Es setzt das Passwort auf `DEMO_USER_PASSWORD` zurück, löscht die Notebooks des Demo-Accounts samt Storage-Dateien und legt das Demo-Notebook mit einer Beispielquelle neu an. Die Beispielquelle durchläuft die normale Ingestion.
+- Das Skript ist idempotent: Es sucht den Demo-Nutzer per E-Mail und verwendet ihn wieder, sonst legt es ihn bestätigt an. Es setzt das Passwort auf `DEMO_USER_PASSWORD` zurück, löscht alle Notebooks des Demo-Accounts und legt das leere Notebook „Demo: Einführung“ neu an, beides in einer Transaktion.
+- **Beispielquelle ab M3 (PE-17):** Ab M3 löscht das Skript auch die Storage-Dateien und legt eine Beispielquelle an (selbst verfasster Markdown-Text), die die normale Ingestion durchläuft. In M1 und M2 bleibt das Demo-Notebook leer.
+- **Umgebung:** Das Skript validiert nur die Variablen, die es braucht (`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DEMO_USER_*`). `db:seed` füllt fehlende Variablen aus `apps/api/.env`. `db:seed:prod` startet mit `--env-file=.env.production`; dann wird `apps/api/.env` nie gelesen, und eine fehlende Variable bricht den Seed mit ihrem Namen ab, ohne Werte.
+- Zu Beginn loggt das Skript den Host der Ziel-Datenbank und die öffentliche Supabase-Projekt-URL, damit sichtbar ist, ob dev oder prod betroffen ist. Gehören Datenbank und Supabase-URL zu verschiedenen Projekten, bricht es ab. E-Mail, Passwort und Schlüssel werden nie geloggt, nur IDs und Anzahlen.
 
 ### health
 
@@ -207,6 +210,7 @@ Die Demo läuft mit `all`. Die Trennung kostet jetzt nur diese Weiche und erlaub
 - Das Drizzle-Schema in `src/db/schema.ts` ist die einzige Quelle der Tabellendefinitionen.
 - Migrationen werden mit `pnpm --filter api db:generate` erzeugt und vor dem Anwenden gelesen. Generierte Migrationen werden nicht von Hand geändert. Ausnahmen (`CREATE EXTENSION vector`, Aktivierung von RLS) stehen in einer eigenen, kommentierten SQL-Migration.
 - Jede neue Tabelle bekommt `user_id`, `ON DELETE CASCADE` auf den Elternschlüssel, aktiviertes RLS und Indizes auf den Spalten, nach denen gefiltert wird (mindestens `user_id`, bei `chunks` zusätzlich `notebook_id`).
+- `notebooks.user_id` verweist auf `auth.users(id)` mit `ON DELETE CASCADE`. Löscht der Betreiber einen Account, verschwinden dessen Notebooks samt allem, was daran hängt. Storage-Dateien erfasst die Kaskade nicht. `auth.users` ist in `schema.ts` nur als Ziel des Fremdschlüssels deklariert und wird nicht exportiert, damit drizzle-kit die Tabelle nie anlegt oder ändert. Folge für Tests und Skripte, die direkt in die Datenbank schreiben: Sie brauchen einen echten Nutzer.
 - Ausnahme `usage_events`: kein Elternschlüssel, `user_id` nullable, Index auf `(kind, created_at)` und `(user_id, kind, created_at)` für die Limit-Abfragen. RLS ist auch hier aktiviert.
 - pg-boss legt sein eigenes Schema `pgboss` an. Es wird nicht über Drizzle verwaltet.
 

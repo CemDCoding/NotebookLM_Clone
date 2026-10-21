@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="500" viewBox="0 0 680 500" role="img">
+  <title>Quellenchat zur Laufzeit</title>
+  <desc>Der Browser lädt die Seiten von Vercel, meldet sich bei Supabase mit dem öffentlichen Key an und ruft die API auf Railway mit einem JWT auf. Nur Railway kennt die Secrets für Datenbank, Storage und Mistral.</desc>
+  <style>
+    text { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #2C2C2A; }
+    .th { font-size: 14px; font-weight: 600; }
+    .ts { font-size: 12px; fill: #5F5E5A; }
+    .box { fill: #F1EFE8; stroke: #888780; stroke-width: 0.75; }
+    .pub { fill: none; stroke: #1D9E75; stroke-width: 1.5; }
+    .sec { fill: none; stroke: #D85A30; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="680" height="500" fill="#FFFFFF"/>
+
+  <rect class="box" x="260" y="40" width="160" height="56" rx="8"/>
+  <text class="th" x="340" y="64" text-anchor="middle">Browser</text>
+  <text class="ts" x="340" y="82" text-anchor="middle">Nutzer der Demo</text>
+
+  <rect class="box" x="40" y="180" width="170" height="56" rx="8"/>
+  <text class="th" x="125" y="204" text-anchor="middle">Vercel</text>
+  <text class="ts" x="125" y="222" text-anchor="middle">Web · Frankfurt</text>
+
+  <rect class="box" x="470" y="180" width="170" height="56" rx="8"/>
+  <text class="th" x="555" y="204" text-anchor="middle">Railway</text>
+  <text class="ts" x="555" y="222" text-anchor="middle">API · EU West</text>
+
+  <rect class="box" x="40" y="380" width="380" height="56" rx="8"/>
+  <text class="th" x="230" y="404" text-anchor="middle">Supabase</text>
+  <text class="ts" x="230" y="422" text-anchor="middle">Auth · Postgres · Storage · Frankfurt</text>
+
+  <rect class="box" x="480" y="380" width="160" height="56" rx="8"/>
+  <text class="th" x="560" y="404" text-anchor="middle">Mistral AI</text>
+  <text class="ts" x="560" y="422" text-anchor="middle">KI · Paris</text>
+
+  <path class="pub" d="M125 178 V68 H256" marker-end="url(#arrow)"/>
+  <text class="ts" x="135" y="120">Seiten und Code,</text>
+  <text class="ts" x="135" y="136">NEXT_PUBLIC_* eingebacken</text>
+
+  <path class="pub" d="M422 68 H555 V176" marker-end="url(#arrow)"/>
+  <text class="ts" x="488" y="58" text-anchor="middle">Bearer-JWT (ab M1)</text>
+  <text class="ts" x="488" y="84" text-anchor="middle">CORS: WEB_ORIGIN</text>
+
+  <path class="pub" d="M340 98 V376" marker-end="url(#arrow)"/>
+  <text class="ts" x="350" y="140">Login mit publishable Key</text>
+  <text class="ts" x="350" y="156">JWT zurück an den Browser</text>
+
+  <path class="sec" d="M468 220 H400 V376" marker-end="url(#arrow)"/>
+  <text class="ts" x="410" y="276">DATABASE_URL</text>
+  <text class="ts" x="410" y="292">sb_secret-Key</text>
+  <text class="ts" x="410" y="308">SUPABASE_URL (JWKS)</text>
+
+  <path class="sec" d="M570 238 V376" marker-end="url(#arrow)"/>
+  <text class="ts" x="562" y="336" text-anchor="end">MISTRAL_API_KEY</text>
+  <text class="ts" x="562" y="352" text-anchor="end">(ab M3)</text>
+
+  <line class="pub" x1="40" y1="470" x2="70" y2="470"/>
+  <text class="ts" x="80" y="474">öffentlich oder pro Nutzer</text>
+  <line class="sec" x1="300" y1="470" x2="330" y2="470"/>
+  <text class="ts" x="340" y="474">Secret, nur auf dem Server</text>
+</svg>

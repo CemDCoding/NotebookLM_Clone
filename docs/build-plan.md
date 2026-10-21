@@ -52,13 +52,13 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M0-API-02 | Datenbank, Health und Fehlerformat | M0 | API | W3 | M0-API-01, M0-SH-01, H-03 | M | fertig |
 | M0-WEB-02 | App-Name, Impressum und Datenschutz | M0 | WEB | W4 | M0-WEB-01 | S | fertig |
 | M0-DEP-01 | Deployment M0 | M0 | HUM | W4 | alle M0, H-04 bis H-07 | H | fertig |
-| M1-SH-01 | Notebook-Verträge | M1 | SH | W1 | M0-DEP-01 | S | offen |
-| M1-API-01 | Gerüst M1: Schema `notebooks`, Modul-Stubs, Decorators | M1 | API | W1 | M0-DEP-01 | M | offen |
-| M1-WEB-01 | Supabase-Login, `proxy.ts` und API-Client | M1 | WEB | W1 | M0-DEP-01 | L | offen |
-| M1-API-02 | JWT-Auth-Guard | M1 | API | W2 | M1-API-01 | M | offen |
-| M1-API-03 | Notebooks-Modul, Bestandslimit und Ownership | M1 | API | W2 | M1-API-01, M1-SH-01 | L | offen |
-| M1-API-04 | Seed-Skript Demo-Account | M1 | API | W2 | M1-API-01 | M | offen |
-| M1-WEB-02 | Notebook-Übersicht | M1 | WEB | W2 | M1-WEB-01, M1-SH-01 | L | offen |
+| M1-SH-01 | Notebook-Verträge | M1 | SH | W1 | M0-DEP-01 | S | fertig |
+| M1-API-01 | Gerüst M1: Schema `notebooks`, Modul-Stubs, Decorators | M1 | API | W1 | M0-DEP-01 | M | fertig |
+| M1-WEB-01 | Supabase-Login, `proxy.ts` und API-Client | M1 | WEB | W1 | M0-DEP-01 | L | fertig |
+| M1-API-02 | JWT-Auth-Guard | M1 | API | W2 | M1-API-01 | M | fertig |
+| M1-API-03 | Notebooks-Modul, Bestandslimit und Ownership | M1 | API | W2 | M1-API-01, M1-SH-01 | L | fertig |
+| M1-API-04 | Seed-Skript Demo-Account | M1 | API | W2 | M1-API-01 | M | fertig |
+| M1-WEB-02 | Notebook-Übersicht | M1 | WEB | W2 | M1-WEB-01, M1-SH-01 | L | fertig |
 | M1-DEP-01 | Deployment M1 | M1 | HUM | W3 | alle M1, H-09 | H | offen |
 | M2-SH-01 | Quellen-Verträge | M2 | SH | W1 | M1-DEP-01 | M | offen |
 | M2-API-01 | Gerüst M2: Schema `sources`/`usage_events`, Modul-Stubs | M2 | API | W1 | M1-DEP-01 | M | offen |
@@ -873,7 +873,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „auth“`, „Tests“; `CLAUDE.md §7 „Authentifizierung und Autorisierung“`, `§11 „Tests“`; PE-19
 - **Abhängigkeiten:** M1-API-01
 - **Parallel möglich mit:** M1-API-03, M1-API-04, M1-WEB-02
-- **Dateien (Eigentum):** `apps/api/src/auth/**` (außer dem Modul-Stub, den das Paket aber ausfüllen darf), `apps/api/test/auth-guard.spec.ts`
+- **Dateien (Eigentum):** `apps/api/src/auth/**` (außer dem Modul-Stub, den das Paket aber ausfüllen darf), `apps/api/test/auth-guard.test.ts`
 - **Nicht anfassen:** `app.module.ts`. Die Registrierung erfolgt über `APP_GUARD` im `AuthModule`.
 - **Umsetzung:**
   1. `jose.createRemoteJWKSet(${SUPABASE_URL}/auth/v1/.well-known/jwks.json)`. `jwtVerify` prüft Issuer `${SUPABASE_URL}/auth/v1`, Audience `authenticated` und Ablauf.
@@ -897,7 +897,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md` „Struktur“ (Schichtenmodell), „limits“, „Fehlerbehandlung“, „Tests“; `CLAUDE.md §7`; PE-07, PE-22
 - **Abhängigkeiten:** M1-API-01, M1-SH-01
 - **Parallel möglich mit:** M1-API-02, M1-API-04, M1-WEB-02
-- **Dateien (Eigentum):** `apps/api/src/notebooks/**`, `apps/api/src/limits/**`, `apps/api/test/ownership.spec.ts`
+- **Dateien (Eigentum):** `apps/api/src/notebooks/**`, `apps/api/src/limits/**`, `apps/api/test/ownership.test.ts`
 - **Nicht anfassen:** `apps/api/src/auth/**`
 - **Umsetzung:**
   1. `NotebooksRepository`: jede Methode hat `userId` als Pflichtparameter. `sourceCount` liefert vorerst 0 (`sources` folgt in M2) oder lässt die Abfrage weg, mit TODO-freiem Kommentar.
@@ -1459,7 +1459,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „chat“` (ganz), „Logging“, „Tests“ (Abbruch); `CLAUDE.md §7 „Missbrauchsschutz“` (Abbruch); PE-07, PE-08, PE-09, PE-20, PE-30, PE-35
 - **Abhängigkeiten:** M4-API-02, M4-API-03, M4-API-04, M4-API-05
 - **Parallel möglich mit:** M4-WEB-03
-- **Dateien (Eigentum):** `apps/api/src/chat/**` außer `prompt/` und `citations/`, `apps/api/test/chat-abort.spec.ts`
+- **Dateien (Eigentum):** `apps/api/src/chat/**` außer `prompt/` und `citations/`, `apps/api/test/chat-abort.test.ts`
 - **Nicht anfassen:** `apps/api/src/llm/**`, `apps/api/src/retrieval/**`, `apps/api/src/limits/**`
 - **Umsetzung:**
   1. Reihenfolge nach PE-30: Notebook-Ownership, Modell auflösen, `hasReadyActiveSources` (sonst `409 NO_READY_SOURCES`), `acceptChat`, Retrieval, Prompt, Stream.

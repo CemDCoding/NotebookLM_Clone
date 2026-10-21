@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="540" viewBox="0 0 680 540" role="img">
+  <title>Deployment und Umgebungsvariablen</title>
+  <desc>Ein Push auf master über GitHub löst Builds auf Vercel und Railway aus. Vercel enthält nur öffentliche Variablen und die Impressumsangaben, Railway enthält die Secrets für Datenbank, Storage und Mistral.</desc>
+  <style>
+    text { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #2C2C2A; }
+    .th { font-size: 14px; font-weight: 600; }
+    .ts { font-size: 12px; fill: #5F5E5A; }
+    .mono { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: 12px; fill: #2C2C2A; }
+    .box { fill: #F1EFE8; stroke: #888780; stroke-width: 0.75; }
+    .arr { fill: none; stroke: #5F5E5A; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="680" height="540" fill="#FFFFFF"/>
+
+  <rect class="box" x="220" y="40" width="240" height="56" rx="8"/>
+  <text class="th" x="340" y="64" text-anchor="middle">Entwickler</text>
+  <text class="ts" x="340" y="82" text-anchor="middle">Werte aus dem Passwort-Manager</text>
+
+  <line class="arr" x1="340" y1="98" x2="340" y2="146" marker-end="url(#arrow)"/>
+  <text class="ts" x="350" y="126">git push auf master</text>
+
+  <rect class="box" x="250" y="150" width="180" height="56" rx="8"/>
+  <text class="th" x="340" y="174" text-anchor="middle">GitHub</text>
+  <text class="ts" x="340" y="192" text-anchor="middle">Code, keine Secrets</text>
+
+  <path class="arr" d="M300 208 V240 H180 V276" marker-end="url(#arrow)"/>
+  <path class="arr" d="M380 208 V240 H500 V276" marker-end="url(#arrow)"/>
+
+  <rect class="box" x="40" y="280" width="280" height="200" rx="8"/>
+  <text class="th" x="180" y="306" text-anchor="middle">Vercel baut apps/web</text>
+  <text class="ts" x="180" y="324" text-anchor="middle">Environment Variables</text>
+  <circle cx="60" cy="350" r="4" fill="#1D9E75"/><text class="mono" x="72" y="354">NEXT_PUBLIC_SUPABASE_URL</text>
+  <circle cx="60" cy="372" r="4" fill="#1D9E75"/><text class="mono" x="72" y="376">NEXT_PUBLIC_SUPABASE_ANON_KEY</text>
+  <circle cx="60" cy="394" r="4" fill="#1D9E75"/><text class="mono" x="72" y="398">NEXT_PUBLIC_API_URL</text>
+  <circle cx="60" cy="416" r="4" fill="#1D9E75"/><text class="mono" x="72" y="420">IMPRESSUM_* (vier Werte)</text>
+  <circle cx="60" cy="438" r="4" fill="#1D9E75"/><text class="mono" x="72" y="442">ENABLE_EXPERIMENTAL_COREPACK</text>
+
+  <rect class="box" x="360" y="280" width="280" height="200" rx="8"/>
+  <text class="th" x="500" y="306" text-anchor="middle">Railway baut apps/api</text>
+  <text class="ts" x="500" y="324" text-anchor="middle">Variables</text>
+  <circle cx="380" cy="350" r="4" fill="#D85A30"/><text class="mono" x="392" y="354">DATABASE_URL</text>
+  <circle cx="380" cy="372" r="4" fill="#D85A30"/><text class="mono" x="392" y="376">SUPABASE_SERVICE_ROLE_KEY</text>
+  <circle cx="380" cy="394" r="4" fill="#D85A30"/><text class="mono" x="392" y="398">MISTRAL_API_KEY</text>
+  <circle cx="380" cy="416" r="4" fill="#1D9E75"/><text class="mono" x="392" y="420">SUPABASE_URL</text>
+  <circle cx="380" cy="438" r="4" fill="#1D9E75"/><text class="mono" x="392" y="442">WEB_ORIGIN</text>
+  <circle cx="380" cy="460" r="4" fill="#1D9E75"/><text class="mono" x="392" y="464">PORT=8080, RUN_MODE=all</text>
+
+  <circle cx="50" cy="514" r="4" fill="#1D9E75"/><text class="ts" x="62" y="518">öffentlich oder unkritisch</text>
+  <circle cx="300" cy="514" r="4" fill="#D85A30"/><text class="ts" x="312" y="518">Secret, in Railway sealed</text>
+</svg>
