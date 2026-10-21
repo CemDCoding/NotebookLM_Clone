@@ -133,3 +133,36 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 
 **Nächster Schritt**
 - M1-DEP-01: `apps/api/.env.production` anlegen, `dev` nach `master`, Prod-Seed, Smoke-Test live.
+
+## 2026-10-21 (Abend) – Deployment M1 blockiert, M2 auf `dev`
+
+**Meilenstein:** M1-DEP-01 offen (Railway-Störung), M2 auf `dev` vollständig integriert, Deployment M2 steht aus
+
+**Deployment M1 (begonnen)**
+- Vorbedingungen geprüft, ohne Werte auszugeben: `dev` gleich `origin/dev`; `apps/api/.env.production` vollständig, Datenbank und Supabase-URL gehören zum selben Projekt und nicht zu dev, Session-Pooler auf Port 5432; die JWKS von prod liefert einen `ES256`-Schlüssel, der Guard kann Prod-Tokens also prüfen.
+- `dev` nach `master` gemergt und gepusht. Railway hat das Deployment nicht ausgeführt: Laut status.railway.com sind Builds und Deployments seit 07:24 UTC in allen Regionen pausiert, Dashboard und API eingeschränkt. Die Freigabe kommt stufenweise, Hobby nach Enterprise und Pro. Live läuft weiter die M0-API (`/notebooks` → `404`). Der Prod-Seed wartet, weil die Tabelle `notebooks` erst mit der Migration beim Start entsteht.
+- Supabase war nicht betroffen: status.supabase.com meldete um 19:58 UTC alle Systeme in Betrieb, die JWKS von prod antwortete mit `200`.
+
+**Bewusste Abweichung: M2 vor dem Live-Gang von M1**
+- §10 sieht vor, einen Meilenstein erst nach dem Deployment des vorherigen zu beginnen. Wegen der Störung ohne absehbares Ende wurde M2 trotzdem auf `dev` umgesetzt. M2-W1 ist rein additiv (Verträge, zwei Tabellen mit RLS, leere Module) und wäre auch versehentlich live unkritisch.
+- Regel dafür: Braucht M1 nach dem Smoke-Test einen Fix, entsteht er auf einem Branch von `master`, wird nach `master` und danach `master` nach `dev` gemergt. So geht nur der Fix live.
+- M3 wird erst nach den Deployments von M1 und M2 begonnen, damit nicht drei Meilensteine ungetestet auf `dev` liegen.
+
+**Umgesetzt (M2-W1 bis M2-W3)**
+- Quellen-Verträge, Tabellen `sources` und `usage_events` mit RLS, Storage-Service mit Pfaden nur aus geprüften UUIDs, Typprüfung nach Inhalt, Upload-Limit in einer Transaktion mit Advisory-Lock, Sources-Endpunkte, Notebook-Ansicht mit Quellenliste und Dialog zum Hinzufügen.
+- `usage_events.user_id` verweist auf `auth.users` mit `ON DELETE SET NULL`. Der Plan sagte „kein FK“, `CLAUDE.md` §4 verlangt aber, dass `user_id` beim Löschen eines Accounts `NULL` wird. Entschieden für den FK, Doku präzisiert: kein Fremdschlüssel zu Notebooks oder Quellen.
+
+**Integrationspunkte**
+- Nach jeder Welle lint, typecheck und test grün. Checks im Review in jedem Worktree selbst ausgeführt, nicht nur aus den Berichten übernommen.
+- Advisory-Lock gegen die dev-Datenbank belegt: Zwei Transaktionen mit gleichem Schlüssel laufen nacheinander, mit verschiedenen Schlüsseln gleichzeitig. Die Gegenprobe zeigt, dass die Wartezeit vom Lock kommt und nicht vom Pool.
+- Handtest nach W3: PDF, `.md` und eingefügter Text erscheinen mit „wartet“; eine in `.txt` umbenannte Binärdatei wird abgelehnt; die Dateien liegen unter `{userId}/{sourceId}` im Bucket und verschwinden beim Löschen der Quelle und des Notebooks.
+
+**Probleme und Erkenntnisse**
+- Zwei Agents haben die gemeinsame Test-App `apps/api/test/support/notebooks-test-app.ts` außerhalb ihres Eigentums angepasst, weil neue Module die Notebook-Tests sonst gebrochen hätten. Übernommen, weil minimal und nur für Tests. Für M3 sollte die Datei im Build-Plan einem Paket ausdrücklich gehören.
+- `pnpm install` nacheinander vor dem Start der Agents erprobt: ca. 4:20 pro Install, bei drei Paketen rund 13 Minuten. Ein Vorteil gegenüber den parallelen Installs aus M1-W1 (laut Agent-Bericht rund 11 Minuten) ist damit nicht belegt. Der Vergleich ist unsicher, weil die alte Zahl aus einem Bericht stammt und der Zustand des pnpm-Stores unbekannt war.
+- `git worktree remove` lässt unter Windows leere Ordner mit pnpm-Links zurück. Alle Links zeigten in den eigenen Restordner, `rm -rf` aus Git Bash entfernt sie gefahrlos.
+- Die Statustabelle im Build-Plan zählt 48 Pakete und 75,75 h, Abschnitt 9 nennt 47 und 75,0 h.
+
+**Nächster Schritt**
+- Sobald Railway Hobby-Builds wieder freigibt: Deployment für `master` prüfen oder „Deploy Latest Commit“ auslösen, Migrations-Log, `db:seed:prod`, Smoke-Test M1, README-Stand, Status M1-DEP-01.
+- Danach M2-DEP-01: `dev` nach `master`, Migrationen `0003`/`0004` im Log, Smoke-Test M2 live. Der Bucket `sources` in prod ist angelegt.
