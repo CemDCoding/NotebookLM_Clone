@@ -73,8 +73,8 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M3-API-02 | Textextraktion und Chunking | M3 | API | W2 | M3-API-01 | M | fertig |
 | M3-API-03 | Embedding-Provider | M3 | API | W2 | M3-API-01 | M | fertig |
 | M3-API-04 | pg-boss-Queue, Einreihen, Aufräum-Job | M3 | API | W2 | M3-API-01 | M | fertig |
-| M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | in Arbeit |
-| M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | in Arbeit |
+| M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | fertig |
+| M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | fertig |
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
 | M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | offen |
 | M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | offen |
