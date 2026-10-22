@@ -76,8 +76,8 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | fertig |
 | M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | fertig |
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
-| M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | in Arbeit |
-| M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | in Arbeit |
+| M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | fertig |
+| M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | fertig |
 | M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
 | M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | offen |
 | M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
