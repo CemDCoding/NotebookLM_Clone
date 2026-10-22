@@ -70,9 +70,9 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M2-DEP-01 | Deployment M2 | M2 | HUM | W4 | alle M2 | H | offen |
 | M3-API-01 | Gerüst M3: Schema `chunks`, Queue/LLM/Ingestion-Stubs | M3 | API | W1 | M2-DEP-01 | M | fertig |
 | M3-WEB-01 | Status-Polling und Fehleranzeige | M3 | WEB | W1 | M2-DEP-01 | S | fertig |
-| M3-API-02 | Textextraktion und Chunking | M3 | API | W2 | M3-API-01 | M | offen |
-| M3-API-03 | Embedding-Provider | M3 | API | W2 | M3-API-01 | M | offen |
-| M3-API-04 | pg-boss-Queue, Einreihen, Aufräum-Job | M3 | API | W2 | M3-API-01 | M | offen |
+| M3-API-02 | Textextraktion und Chunking | M3 | API | W2 | M3-API-01 | M | in Arbeit |
+| M3-API-03 | Embedding-Provider | M3 | API | W2 | M3-API-01 | M | in Arbeit |
+| M3-API-04 | pg-boss-Queue, Einreihen, Aufräum-Job | M3 | API | W2 | M3-API-01 | M | in Arbeit |
 | M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | offen |
 | M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | offen |
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
@@ -1220,7 +1220,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md` „sources und ingestion“, „limits“ (Aufräum-Job), „RUN_MODE“, „Datenbank“ (pg-boss); `docs/deployment.md „Datenbankverbindung“`; PE-12, PE-14
 - **Abhängigkeiten:** M3-API-01
 - **Parallel möglich mit:** M3-API-02, M3-API-03
-- **Dateien (Eigentum):** `apps/api/src/queue/**`, `apps/api/src/sources/sources.service.ts`, `apps/api/src/sources/sources.module.ts`, `apps/api/src/limits/usage-cleanup.job.ts`, `apps/api/src/limits/limits.module.ts`, `apps/api/test/support/**` (die gemeinsame Test-App muss die Queue ersetzen, sobald das Quellen-Modul sie einbindet)
+- **Dateien (Eigentum):** `apps/api/src/queue/**`, `apps/api/src/sources/sources.service.ts`, `apps/api/src/sources/sources.service.test.ts` (der Test baut den Service direkt und braucht die Queue als neuen Parameter), `apps/api/src/sources/sources.module.ts`, `apps/api/src/limits/usage-cleanup.job.ts`, `apps/api/src/limits/limits.module.ts`, `apps/api/test/support/**` (die gemeinsame Test-App muss die Queue ersetzen, sobald das Quellen-Modul sie einbindet)
 - **Nicht anfassen:** `apps/api/src/ingestion/**`, übrige `apps/api/src/limits/**`
 - **Umsetzung:**
   1. `QueueService` startet pg-boss (Pool max. 3) bei `onModuleInit` und stoppt beim Shutdown. Queues `ingest-source` und `cleanup-usage-events` anlegen.
