@@ -78,12 +78,12 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
 | M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | fertig |
 | M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | fertig |
-| M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
-| M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | offen |
-| M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
-| M4-API-05 | Chat-Limits | M4 | API | W2 | M4-API-01 | S | offen |
-| M4-WEB-01 | SSE-Client und Stream-Hook | M4 | WEB | W2 | M4-SH-01 | M | offen |
-| M4-WEB-02 | Antwort-Rendering und Zitate | M4 | WEB | W2 | M4-SH-01 | L | offen |
+| M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | in Arbeit |
+| M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | in Arbeit |
+| M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | in Arbeit |
+| M4-API-05 | Chat-Limits | M4 | API | W2 | M4-API-01 | S | in Arbeit |
+| M4-WEB-01 | SSE-Client und Stream-Hook | M4 | WEB | W2 | M4-SH-01 | M | in Arbeit |
+| M4-WEB-02 | Antwort-Rendering und Zitate | M4 | WEB | W2 | M4-SH-01 | L | in Arbeit |
 | M4-API-06 | Chat-Service, SSE-Endpunkt und Verlauf | M4 | API | W3 | M4-API-02 bis M4-API-05 | L | offen |
 | M4-WEB-03 | Chat-Panel | M4 | WEB | W3 | M4-WEB-01, M4-WEB-02 | L | offen |
 | M4-DEP-01 | Deployment M4 | M4 | HUM | W4 | alle M4, H-10 (optional) | H | offen |
@@ -267,7 +267,7 @@ flowchart LR
 | `pnpm-lock.yaml` | jedes Paket, das eine `package.json` ändert | **Konflikte löst der Entwickler beim Merge mit `pnpm install`.** pnpm führt widersprüchliche Lockfile-Stände dabei selbst zusammen. |
 | `apps/api/package.json` | M0-API-01, dann nur das Gerüst-Paket `Mx-API-01` jedes Meilensteins | Welle 1 des Meilensteins |
 | `apps/web/package.json` | M0-WEB-01, M1-WEB-01, M4-WEB-02, M5-OPS-01 | höchstens ein Web-Paket pro Welle (so geplant) |
-| `apps/api/src/app.module.ts` | M0-API-01, M0-API-02, dann das Gerüst-Paket `Mx-API-01`, in M5 M5-API-02 | Gerüst registriert alle neuen Module als leere Stubs. Parallele Pakete füllen sie nur aus. |
+| `apps/api/src/app.module.ts` | M0-API-01, M0-API-02, dann das Gerüst-Paket `Mx-API-01`, in M4 M4-API-02 (`ModelsModule`), in M5 M5-API-02 | Gerüst registriert alle neuen Module als leere Stubs. Parallele Pakete füllen sie nur aus. |
 | `apps/api/src/db/schema.ts`, `src/db/migrations/**` | nur Gerüst-Pakete (M0-API-02, Mx-API-01) | Welle 1 |
 | `apps/api/src/config/**`, `apps/api/.env.example` | M0-API-01 legt **alle** Variablen an | danach nur nach Rückfrage |
 | `packages/shared/src/index.ts` | das SH-Paket der jeweiligen Welle | pro Welle gibt es höchstens ein SH-Paket |
@@ -1359,12 +1359,12 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „llm“`, „chat“ (Abbruch); `CLAUDE.md §6`; PE-21, PE-32
 - **Abhängigkeiten:** M4-API-01, M4-SH-01
 - **Parallel möglich mit:** M4-API-03, M4-API-04, M4-API-05, M4-WEB-01, M4-WEB-02
-- **Dateien (Eigentum):** `apps/api/src/llm/**`
+- **Dateien (Eigentum):** `apps/api/src/llm/**`, `apps/api/src/app.module.ts`, `apps/api/src/app.module.test.ts`
 - **Nicht anfassen:** `apps/api/src/chat/**`
 - **Umsetzung:**
   1. `ChatProvider.stream({ model, messages, signal })` liefert `AsyncIterable<string>`. Die Implementierung reicht `signal` an den `openai`-Client weiter.
   2. `ModelRegistry` aus `CHAT_MODELS` (Mistral), dazu `OLLAMA_CHAT_MODELS`, falls `OLLAMA_BASE_URL` gesetzt ist. Ollama-IDs tragen das Präfix `ollama:`. `resolve(id?)` liefert Provider und Modellname oder einen Fehler `400` bei unbekanntem Modell. Ohne Angabe gilt das erste Modell.
-  3. `GET /models` liefert `ModelListResponse`. Labels: Mistral-Namen lesbar, Ollama mit Kennzeichen „Lokal“.
+  3. `GET /models` liefert `ModelListResponse`. Labels: Mistral-Namen lesbar, Ollama mit Kennzeichen „Lokal“. Der Controller liegt in einem eigenen `llm/models.module.ts`, registriert in `RUN_MODE_MODULES.http`. Im `LlmModule` (lädt in jedem Modus) würde er auch im Worker erscheinen, der nur `/health` bedient.
 - **Schnittstellen:** nutzt `ModelListResponseSchema`. Stellt `CHAT_PROVIDER_FACTORY` und `ModelRegistry` bereit.
 - **Akzeptanzkriterien:** Ein unbekanntes Modell wird abgelehnt. Ohne `OLLAMA_BASE_URL` erscheint kein lokales Modell. Abbruch per Signal beendet die Iteration.
 - **Tests:** Modell-Whitelist (`apps/api/CLAUDE.md „Tests“`), Abbruch mit gefaktem Stream
@@ -1410,6 +1410,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
   3. Die Chunks stehen als `<source n="…" title="…" page="…">…</source>`. Titel werden escaped, schließende Tags im Inhalt neutralisiert.
   4. Der Verlauf umfasst die letzten 6 Nachrichten.
   5. `extractCitationNumbers(text)` und `mapCitations(numbers, chunks)` liefern `StoredCitation[]`. Ungültige Nummern werden verworfen, Duplikate entfernt.
+  6. Den Eingabetyp für Chunks definiert das Paket selbst, minimal (`sourceId`, `chunkId`, `title`, `page`, `content`). M4-API-03 entsteht parallel, M4-API-06 bildet dessen Ergebnis darauf ab.
 - **Schnittstellen:** nutzt `StoredCitationSchema`
 - **Akzeptanzkriterien:** Ein Quellinhalt mit `</source>` oder „Ignoriere alle Anweisungen“ bricht den Block nicht auf. `[99]` ohne Chunk wird verworfen.
 - **Tests:** Unit-Tests Prompt-Aufbau (Reihenfolge, Escaping, Verlaufslänge, Sprache) und Zitat-Zuordnung (gültig, ungültig, doppelt, `[1][2]`, `[1, 2]`)
@@ -1443,9 +1444,10 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/web/CLAUDE.md „Chat und Zitate“` (Stream, Stopp), „Tests“; PE-20
 - **Abhängigkeiten:** M4-SH-01
 - **Parallel möglich mit:** M4-API-02 bis M4-API-05, M4-WEB-02
-- **Dateien (Eigentum):** `apps/web/src/lib/sse.ts` (+ Test), `apps/web/src/features/chat/use-chat-stream.ts` (+ Test)
-- **Nicht anfassen:** `apps/web/src/lib/api-client.ts`. Die Token-Logik wird importiert, nicht geändert.
+- **Dateien (Eigentum):** `apps/web/src/lib/sse.ts` (+ Test), `apps/web/src/features/chat/use-chat-stream.ts` (+ Test), `apps/web/src/lib/api-client.ts` (+ Test), dort nur die Ergänzung aus Schritt 0
+- **Nicht anfassen:** bestehendes Verhalten von `apiFetch`
 - **Umsetzung:**
+  0. `api-client.ts` gibt die Token-Logik bisher nicht heraus, `apiFetch` liest immer JSON. Ergänzung: eine Variante, die mit derselben Token- und `401`-Logik die rohe `Response` liefert und Fehler vor dem Stream als `ApiError` wirft. So gibt es Token-Erneuerung und Fehlerformat nur an einer Stelle.
   1. `readSseStream(response, onEvent)`: SSE-Frames aus dem `ReadableStream` parsen (Zeilenpuffer, `event:` und `data:`) und jedes Event mit dem Schema aus `packages/shared` prüfen.
   2. `useChatStream(notebookId)`: `send(question, model)` mit `AbortController`. Zustände `idle`, `streaming`, `done`, `aborted`, `error`, dazu der gesammelte Text und die Zitate. `stop()` bricht ab. Beim Unmount wird ebenfalls abgebrochen. Ein `409` oder `429` vor dem Stream wird als Fehler mit API-Meldung gezeigt.
 - **Schnittstellen:** nutzt die SSE-Event-Schemas und `ChatRequestSchema`
