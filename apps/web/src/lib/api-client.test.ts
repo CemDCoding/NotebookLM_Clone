@@ -1,7 +1,13 @@
 import { ErrorCode } from '@notebooklm/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { ApiError, createApiFetch, type ApiClientDeps, type SessionTokens } from './api-client';
+import {
+  ApiError,
+  createApiFetch,
+  createApiFetchResponse,
+  type ApiClientDeps,
+  type SessionTokens,
+} from './api-client';
 
 // The real module would create a Supabase client; these tests inject their own session instead.
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: vi.fn() }));
@@ -31,13 +37,19 @@ function setup(responses: Response[], session: Partial<SessionTokens> = {}) {
     ...session,
   };
   const redirectToLogin = vi.fn();
-  const apiFetch = createApiFetch({
+  const deps: ApiClientDeps = {
     baseUrl: 'http://api.test/',
     session: fakeSession,
     fetch,
     redirectToLogin,
-  });
-  return { apiFetch, fetch, session: fakeSession, redirectToLogin };
+  };
+  return {
+    apiFetch: createApiFetch(deps),
+    apiFetchResponse: createApiFetchResponse(deps),
+    fetch,
+    session: fakeSession,
+    redirectToLogin,
+  };
 }
 
 function authorizationOf(init: RequestInit | undefined): string | null {
@@ -190,5 +202,47 @@ describe('apiFetch', () => {
 
     expect(fetch).not.toHaveBeenCalled();
     expect(redirectToLogin).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('apiFetchResponse', () => {
+  it('returns the response unread, with the access token sent', async () => {
+    const stream = new Response('data: {}', {
+      headers: { 'Content-Type': 'text/event-stream' },
+    });
+    const { apiFetchResponse, fetch } = setup([stream]);
+
+    const response = await apiFetchResponse('/notebooks/n1/chat', {
+      method: 'POST',
+      body: { question: 'Frage' },
+    });
+
+    expect(response).toBe(stream);
+    expect(response.bodyUsed).toBe(false);
+    expect(authorizationOf(fetch.mock.calls[0]?.[1])).toBe('Bearer token-1');
+  });
+
+  it('throws an error before the stream as ApiError with the API message', async () => {
+    const { apiFetchResponse } = setup([
+      jsonResponse(409, {
+        statusCode: 409,
+        error: 'ConflictException',
+        message: 'Aktiviere mindestens eine fertige Quelle.',
+        code: ErrorCode.NO_READY_SOURCES,
+      }),
+    ]);
+
+    const error = await apiFetchResponse('/notebooks/n1/chat', { method: 'POST' }).catch((e) => e);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 409, code: ErrorCode.NO_READY_SOURCES });
+  });
+
+  it('renews the session on 401 like apiFetch', async () => {
+    const stream = new Response('');
+    const { apiFetchResponse, fetch } = setup([unauthorized(), stream]);
+
+    await expect(apiFetchResponse('/notebooks/n1/chat')).resolves.toBe(stream);
+    expect(authorizationOf(fetch.mock.calls[1]?.[1])).toBe('Bearer token-2');
   });
 });
