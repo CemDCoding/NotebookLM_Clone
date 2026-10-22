@@ -166,3 +166,24 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 **Nächster Schritt**
 - Sobald Railway Hobby-Builds wieder freigibt: Deployment für `master` prüfen oder „Deploy Latest Commit“ auslösen, Migrations-Log, `db:seed:prod`, Smoke-Test M1, README-Stand, Status M1-DEP-01.
 - Danach M2-DEP-01: `dev` nach `master`, Migrationen `0003`/`0004` im Log, Smoke-Test M2 live. Der Bucket `sources` in prod ist angelegt.
+
+## 2026-10-22 – Sicherheitsvorfall bei Railway, Secrets rotiert
+
+**Meilenstein:** M1-DEP-01 weiter blockiert, M2 wartet auf `dev`
+
+**Vorfall**
+- Die Railway-Störung vom Vortag war ein Sicherheitsvorfall: Laut Railway hat ein Dritter möglicherweise auf die gespeicherten Umgebungsvariablen zugegriffen und einen Teil davon entschlüsselt. Railway empfiehlt allen Nutzern, sämtliche Variablen zu ersetzen und die Logs zu prüfen. Builds für Hobby sind noch gesperrt (Stand 08:01 UTC: nur Enterprise und Pro).
+- Betroffen waren drei Secrets in Railway: `MISTRAL_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` und das DB-Passwort von prod in `DATABASE_URL`. `SUPABASE_URL`, `WEB_ORIGIN`, `PORT` und `RUN_MODE` sind nicht geheim. Nicht betroffen: die Demo-Zugangsdaten (nur lokal), das dev-Projekt, die JWT-Signaturschlüssel von Supabase, Vercel.
+
+**Maßnahmen**
+- Sofort rotiert, ohne auf die Builds zu warten, damit die alten Werte nicht weiter nutzbar sind: Mistral-Key widerrufen und neu angelegt, neuer `sb_secret_`-Key in prod und alter gelöscht, DB-Passwort von prod zurückgesetzt. Neue Werte in Railway und in `apps/api/.env.production` eingetragen, nie im Chat oder Repository.
+- Bewusst in Kauf genommen: Die laufende M0-API kommt mit dem alten Passwort nicht mehr in die Datenbank (`/health` → `503`, `database: down`), bis Railway wieder deployen kann. Die Demo hatte noch keine Nutzer.
+- Prod-Datenbank lesend auf Missbrauch geprüft, nur Anzahlen und Zeitpunkte ausgegeben: keine Nutzer in `auth.users`, keine Tabellen in `public` (erwartet vor Migration `0001`), Storage leer, Bucket `sources` privat, keine unerwarteten Rollen mit Login.
+
+**Probleme und Erkenntnisse**
+- Nach dem ersten Passwort-Reset meldete der Pooler `28P01`. Format und Einlesen der `DATABASE_URL` waren nachweislich korrekt (gleicher Wert wie in der Datei, eine Zeile, richtiger Benutzer und Host, dev unverändert erreichbar). Ein zweiter, bestätigter Reset löste es. Vermutlich war der erste Reset nicht gespeichert worden.
+- Die Prüfung gegen prod lief als vom Entwickler ausgeführtes Skript: Direkte Lesezugriffe der KI auf Produktivdaten blockiert die Rechteprüfung, und das ist gewollt.
+- Der Vorfall bestätigt zwei Entscheidungen: Secrets liegen nur in Umgebungsvariablen und sind deshalb ohne Codeänderung austauschbar, und RLS ohne Policies hätte einen gestohlenen publishable Key wirkungslos gemacht. Ein gestohlener Service-Key oder ein DB-Passwort umgeht RLS dagegen. Deshalb war die Rotation nötig.
+
+**Nächster Schritt**
+- Sobald Railway Hobby-Builds freigibt: M1-DEP-01 fortsetzen. Das erste Deployment übernimmt die neuen Secrets.
