@@ -31,9 +31,11 @@ const THROTTLE_LIMIT = 120;
 // Auth loads in every mode, so any controller is protected by default.
 // Storage, queue and LLM serve both sides: the API uploads, enqueues and chats,
 // the worker downloads, processes jobs and embeds. None of them has a controller.
+// Limits load everywhere too: the API checks them, the worker runs their daily
+// usage cleanup job.
 export const RUN_MODE_MODULES: RunModeModules = {
-  always: [DbModule, AuthModule, HealthModule, StorageModule, QueueModule, LlmModule],
-  http: [LimitsModule, NotebooksModule, SourcesModule],
+  always: [DbModule, AuthModule, HealthModule, StorageModule, QueueModule, LlmModule, LimitsModule],
+  http: [NotebooksModule, SourcesModule],
   worker: [IngestionModule],
 };
 
