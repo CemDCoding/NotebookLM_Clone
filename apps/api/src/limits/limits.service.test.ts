@@ -6,7 +6,7 @@ import { LimitExceededError } from '../common/errors';
 import type { AppConfigService } from '../config';
 import type { LimitTransaction, LimitTransactions } from './limit-transactions';
 import type { LimitsRepository } from './limits.repository';
-import { GLOBAL_UPLOAD_LOCK_KEY, LimitsService } from './limits.service';
+import { GLOBAL_CHAT_LOCK_KEY, GLOBAL_UPLOAD_LOCK_KEY, LimitsService } from './limits.service';
 import type { SourceCountsRepository } from './source-counts.repository';
 import type { UsageEventKind, UsageEventsRepository } from './usage-events.repository';
 
@@ -28,11 +28,11 @@ interface SourceRow {
 }
 
 /**
- * In-memory stand-in for the tables behind the upload limits. Sources are
+ * In-memory stand-in for the tables behind the usage limits. Sources are
  * added and deleted the way the sources module will do it; usage events are
  * written only through the repository, like in the real flow.
  */
-class InMemoryUploadTables {
+class InMemoryUsageTables {
   readonly events: UsageEvent[] = [];
   private readonly sources: SourceRow[] = [];
 
@@ -70,15 +70,15 @@ class FakeLimitTransactions {
   }
 }
 
-interface UploadFixture {
+interface UsageFixture {
   limits: LimitsService;
-  tables: InMemoryUploadTables;
+  tables: InMemoryUsageTables;
   transactions: FakeLimitTransactions;
   txSeen: LimitTransaction[];
 }
 
-function createUploadService(overrides: Partial<Limits>): UploadFixture {
-  const tables = new InMemoryUploadTables();
+function createUsageService(overrides: Partial<Limits>): UsageFixture {
+  const tables = new InMemoryUsageTables();
   const transactions = new FakeLimitTransactions();
   const txSeen: LimitTransaction[] = [];
 
@@ -140,7 +140,7 @@ async function fill(store: InMemoryNotebooks, userId: string, count: number): Pr
   }
 }
 
-async function uploadAndStore(fixture: UploadFixture, userId: string, notebookId: string) {
+async function uploadAndStore(fixture: UsageFixture, userId: string, notebookId: string) {
   await fixture.limits.acceptUpload(userId, notebookId);
   return fixture.tables.addSource(userId, notebookId);
 }
@@ -194,7 +194,7 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('accepts an upload below both limits and records it as a usage event', async () => {
-    const fixture = createUploadService({ maxSourcesPerNotebook: 2, uploadsGlobalPerDay: 5 });
+    const fixture = createUsageService({ maxSourcesPerNotebook: 2, uploadsGlobalPerDay: 5 });
 
     await expect(fixture.limits.acceptUpload(USER, NOTEBOOK)).resolves.toBeUndefined();
 
@@ -204,7 +204,7 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('checks and writes inside one run that holds the global upload lock', async () => {
-    const fixture = createUploadService({});
+    const fixture = createUsageService({});
 
     await fixture.limits.acceptUpload(USER, NOTEBOOK);
 
@@ -214,7 +214,7 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('rejects the source beyond the notebook limit with a German message and records nothing', async () => {
-    const fixture = createUploadService({ maxSourcesPerNotebook: 2 });
+    const fixture = createUsageService({ maxSourcesPerNotebook: 2 });
     await uploadAndStore(fixture, USER, NOTEBOOK);
     await uploadAndStore(fixture, USER, NOTEBOOK);
 
@@ -227,14 +227,14 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('counts the sources of the given notebook only', async () => {
-    const fixture = createUploadService({ maxSourcesPerNotebook: 1 });
+    const fixture = createUsageService({ maxSourcesPerNotebook: 1 });
     await uploadAndStore(fixture, USER, OTHER_NOTEBOOK);
 
     await expect(fixture.limits.acceptUpload(USER, NOTEBOOK)).resolves.toBeUndefined();
   });
 
   it('frees stock when a source is deleted', async () => {
-    const fixture = createUploadService({ maxSourcesPerNotebook: 1 });
+    const fixture = createUsageService({ maxSourcesPerNotebook: 1 });
     const sourceId = await uploadAndStore(fixture, USER, NOTEBOOK);
     await expect(fixture.limits.acceptUpload(USER, NOTEBOOK)).rejects.toThrow(LimitExceededError);
 
@@ -244,7 +244,7 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('rejects uploads beyond the global daily limit, counting all users', async () => {
-    const fixture = createUploadService({ uploadsGlobalPerDay: 2 });
+    const fixture = createUsageService({ uploadsGlobalPerDay: 2 });
     await uploadAndStore(fixture, OTHER_USER, OTHER_NOTEBOOK);
     await uploadAndStore(fixture, USER, NOTEBOOK);
 
@@ -257,7 +257,7 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('does not reset the daily quota when sources are deleted', async () => {
-    const fixture = createUploadService({ maxSourcesPerNotebook: 20, uploadsGlobalPerDay: 2 });
+    const fixture = createUsageService({ maxSourcesPerNotebook: 20, uploadsGlobalPerDay: 2 });
     const first = await uploadAndStore(fixture, USER, NOTEBOOK);
     const second = await uploadAndStore(fixture, USER, NOTEBOOK);
 
@@ -270,7 +270,7 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('resets the daily quota at midnight in Berlin, not at midnight UTC', async () => {
-    const fixture = createUploadService({ uploadsGlobalPerDay: 1 });
+    const fixture = createUsageService({ uploadsGlobalPerDay: 1 });
     // 23:59 in Berlin on 21 October.
     vi.setSystemTime(new Date('2026-10-21T21:59:00.000Z'));
     await uploadAndStore(fixture, USER, NOTEBOOK);
@@ -283,11 +283,151 @@ describe('LimitsService.acceptUpload', () => {
   });
 
   it('lets only one of two parallel uploads take the last daily slot', async () => {
-    const fixture = createUploadService({ uploadsGlobalPerDay: 1 });
+    const fixture = createUsageService({ uploadsGlobalPerDay: 1 });
 
     const results = await Promise.allSettled([
       fixture.limits.acceptUpload(USER, NOTEBOOK),
       fixture.limits.acceptUpload(OTHER_USER, OTHER_NOTEBOOK),
+    ]);
+
+    expect(results.map((result) => result.status).sort()).toEqual(['fulfilled', 'rejected']);
+    expect(fixture.tables.events).toHaveLength(1);
+  });
+});
+
+describe('LimitsService.acceptChat', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    // 14:00 in Berlin (CEST).
+    vi.setSystemTime(new Date('2026-10-21T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function chat(fixture: UsageFixture, userId: string, times: number): Promise<void> {
+    for (let i = 0; i < times; i += 1) {
+      await fixture.limits.acceptChat(userId);
+    }
+  }
+
+  it('accepts a request below both limits and records it as a usage event', async () => {
+    const fixture = createUsageService({});
+
+    await expect(fixture.limits.acceptChat(USER)).resolves.toBeUndefined();
+
+    expect(fixture.tables.events).toEqual([
+      { kind: 'chat', userId: USER, createdAt: new Date('2026-10-21T12:00:00.000Z') },
+    ]);
+  });
+
+  it('checks and writes inside one run that holds the global chat lock', async () => {
+    const fixture = createUsageService({});
+
+    await fixture.limits.acceptChat(USER);
+
+    expect(fixture.transactions.lockKeys).toEqual([[GLOBAL_CHAT_LOCK_KEY]]);
+    expect(fixture.txSeen).toHaveLength(3);
+    expect(fixture.txSeen.every((tx) => tx === fixture.transactions.tx)).toBe(true);
+  });
+
+  it('rejects the 101st request of a user within an hour with a German message', async () => {
+    const fixture = createUsageService({});
+    await chat(fixture, USER, 100);
+
+    const error = await fixture.limits.acceptChat(USER).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(LimitExceededError);
+    expect(error).toMatchObject({ statusCode: 429, code: ErrorCode.LIMIT_EXCEEDED });
+    expect((error as Error).message).toBe(
+      'Du hast das Stundenlimit von 100 Fragen erreicht. Versuche es später erneut.',
+    );
+    expect(fixture.tables.events).toHaveLength(100);
+  });
+
+  it('counts the hourly requests of the given user only', async () => {
+    const fixture = createUsageService({ chatRequestsPerUserPerHour: 1 });
+    await chat(fixture, OTHER_USER, 1);
+
+    await expect(fixture.limits.acceptChat(USER)).resolves.toBeUndefined();
+  });
+
+  it('rolls the hourly window over 60 minutes instead of resetting on the full hour', async () => {
+    const fixture = createUsageService({ chatRequestsPerUserPerHour: 1 });
+    // 14:30 in Berlin.
+    vi.setSystemTime(new Date('2026-10-21T12:30:00.000Z'));
+    await chat(fixture, USER, 1);
+
+    // 15:00 has passed, but the request is only 59 minutes old.
+    vi.setSystemTime(new Date('2026-10-21T13:29:00.000Z'));
+    await expect(fixture.limits.acceptChat(USER)).rejects.toThrow('Stundenlimit');
+
+    vi.setSystemTime(new Date('2026-10-21T13:30:00.001Z'));
+    await expect(fixture.limits.acceptChat(USER)).resolves.toBeUndefined();
+  });
+
+  it('rejects the 501st request of the day across all users', async () => {
+    const fixture = createUsageService({});
+    const users = Array.from({ length: 10 }, () => randomUUID());
+    for (let i = 0; i < 500; i += 1) {
+      await fixture.limits.acceptChat(users[i % users.length] ?? USER);
+    }
+
+    const error = await fixture.limits.acceptChat(USER).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(LimitExceededError);
+    expect(error).toMatchObject({ statusCode: 429, code: ErrorCode.LIMIT_EXCEEDED });
+    expect((error as Error).message).toBe(
+      'Die Demo hat ihr Tageslimit von 500 Fragen erreicht. Bitte versuche es morgen erneut.',
+    );
+    expect(fixture.tables.events).toHaveLength(500);
+  });
+
+  it('does not count uploads towards the chat limits', async () => {
+    const fixture = createUsageService({
+      chatRequestsPerUserPerHour: 1,
+      chatRequestsGlobalPerDay: 1,
+    });
+    await uploadAndStore(fixture, USER, NOTEBOOK);
+
+    await expect(fixture.limits.acceptChat(USER)).resolves.toBeUndefined();
+  });
+
+  it('does not reset the limits when the chat history is deleted', async () => {
+    const fixture = createUsageService({ chatRequestsPerUserPerHour: 2 });
+    // The chat history lives in `messages`; usage events have no link to it.
+    const history: string[] = [];
+    for (let i = 0; i < 2; i += 1) {
+      await fixture.limits.acceptChat(USER);
+      history.push(`Frage ${i + 1}`, `Antwort ${i + 1}`);
+    }
+
+    history.length = 0;
+
+    await expect(fixture.limits.acceptChat(USER)).rejects.toThrow('Stundenlimit von 2 Fragen');
+    expect(fixture.tables.events).toHaveLength(2);
+  });
+
+  it('resets the daily quota at midnight in Berlin, not at midnight UTC', async () => {
+    const fixture = createUsageService({ chatRequestsGlobalPerDay: 1 });
+    // 23:00 in Berlin on 21 October.
+    vi.setSystemTime(new Date('2026-10-21T21:00:00.000Z'));
+    await chat(fixture, USER, 1);
+    await expect(fixture.limits.acceptChat(OTHER_USER)).rejects.toThrow('Tageslimit von 1 Fragen');
+
+    // 00:00 in Berlin on 22 October, still 21 October in UTC.
+    vi.setSystemTime(new Date('2026-10-21T22:00:00.000Z'));
+
+    await expect(fixture.limits.acceptChat(OTHER_USER)).resolves.toBeUndefined();
+  });
+
+  it('lets only one of two parallel requests take the last daily slot', async () => {
+    const fixture = createUsageService({ chatRequestsGlobalPerDay: 1 });
+
+    const results = await Promise.allSettled([
+      fixture.limits.acceptChat(USER),
+      fixture.limits.acceptChat(OTHER_USER),
     ]);
 
     expect(results.map((result) => result.status).sort()).toEqual(['fulfilled', 'rejected']);
