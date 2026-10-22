@@ -10,11 +10,14 @@ import { AppConfigService } from '../../src/config';
 import { LimitTransactions } from '../../src/limits/limit-transactions';
 import { LimitsRepository } from '../../src/limits/limits.repository';
 import { SourceCountsRepository } from '../../src/limits/source-counts.repository';
+import { UsageCleanupJob } from '../../src/limits/usage-cleanup.job';
 import { UsageEventsRepository } from '../../src/limits/usage-events.repository';
 import { NotebooksModule } from '../../src/notebooks/notebooks.module';
 import { NotebooksRepository } from '../../src/notebooks/notebooks.repository';
+import { PG_BOSS, QueueService } from '../../src/queue/queue.service';
 import { SourcesRepository } from '../../src/sources/sources.repository';
 import { STORAGE_CLIENT, StorageService } from '../../src/storage/storage.service';
+import { FakeQueue } from './fake-queue';
 import { InMemoryNotebooks } from './in-memory-notebooks';
 import { FakeStorage, InMemorySources, uploadLimitTables } from './in-memory-sources';
 
@@ -30,6 +33,7 @@ export interface NotebooksTestApp {
   store: InMemoryNotebooks;
   sources: InMemorySources;
   storage: FakeStorage;
+  queue: FakeQueue;
   /** Number of `upload` usage events written so far. */
   uploadEvents: () => number;
 }
@@ -37,7 +41,7 @@ export interface NotebooksTestApp {
 /**
  * The real `NotebooksModule`, and with it the `SourcesModule`, with the
  * global pipe and filter of `AppModule`, backed by in-memory stores instead
- * of the database and the storage bucket. Sources see the notebooks of the
+ * of the database, the storage bucket and pg-boss. Sources see the notebooks of the
  * notebook store, as they would through the database.
  */
 export async function createNotebooksTestApp(
@@ -49,6 +53,7 @@ export async function createNotebooksTestApp(
     async (userId, notebookId) => (await store.findById(userId, notebookId)) !== undefined,
   );
   const storage = new FakeStorage();
+  const queue = new FakeQueue();
   const tables = uploadLimitTables(sources);
   // Unset overrides keep their default instead of becoming `undefined`.
   const overrides = Object.fromEntries(
@@ -90,12 +95,20 @@ export async function createNotebooksTestApp(
     // The real client would need the Supabase URL and key; the fake storage replaces its only user.
     .overrideProvider(STORAGE_CLIENT)
     .useValue({})
+    .overrideProvider(QueueService)
+    .useValue(queue)
+    // pg-boss would need a database; the fake queue replaces its only user.
+    .overrideProvider(PG_BOSS)
+    .useValue({})
+    // The cleanup job is a worker concern and would need the database.
+    .overrideProvider(UsageCleanupJob)
+    .useValue({})
     .compile();
 
   const app = moduleRef.createNestApplication({ logger: false });
   app.use(fakeAuth);
   await app.init();
-  return { app, store, sources, storage, uploadEvents: tables.uploadEvents };
+  return { app, store, sources, storage, queue, uploadEvents: tables.uploadEvents };
 }
 
 function fakeAuth(req: Request, _res: Response, next: NextFunction): void {

@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { DEFAULT_LIMITS, ErrorCode, type Limits, SourceSchema } from '@notebooklm/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FakeQueue } from '../../test/support/fake-queue';
 import {
   type CallLog,
   createUploadLimits,
@@ -15,6 +16,7 @@ import {
   UnsupportedFileError,
 } from '../common/errors';
 import type { AppConfigService } from '../config';
+import type { QueueService } from '../queue/queue.service';
 import type { StorageService } from '../storage/storage.service';
 import type { SourcesRepository } from './sources.repository';
 import { SourcesService } from './sources.service';
@@ -33,6 +35,7 @@ interface Fixture {
   service: SourcesService;
   sources: InMemorySources;
   storage: FakeStorage;
+  queue: FakeQueue;
   calls: CallLog;
   uploadEvents: () => number;
 }
@@ -41,6 +44,7 @@ function createService(overrides: Partial<Limits> = {}): Fixture {
   const calls: CallLog = [];
   const sources = new InMemorySources(calls);
   const storage = new FakeStorage(calls);
+  const queue = new FakeQueue(calls);
   const { limits, uploadEvents } = createUploadLimits(sources, overrides);
   const config = { limits: { ...DEFAULT_LIMITS, ...overrides } } as AppConfigService;
   sources.addNotebook(USER, NOTEBOOK);
@@ -50,8 +54,9 @@ function createService(overrides: Partial<Limits> = {}): Fixture {
     storage as unknown as StorageService,
     limits,
     config,
+    queue as unknown as QueueService,
   );
-  return { service, sources, storage, calls, uploadEvents };
+  return { service, sources, storage, queue, calls, uploadEvents };
 }
 
 async function caught(promise: Promise<unknown>): Promise<unknown> {
@@ -99,14 +104,58 @@ describe('SourcesService', () => {
       expect(f.sources.rows[0]).toMatchObject({ userId: USER, storagePath: path });
     });
 
-    it('runs the steps of PE-16 in order: limits, then storage, then database', async () => {
+    it('runs the steps of PE-16 in order: limits, storage, database, then the job', async () => {
       const source = await f.service.upload(USER, NOTEBOOK, {
         originalName: 'a.txt',
         content: markdown,
       });
 
       expect(f.uploadEvents()).toBe(1);
-      expect(f.calls).toEqual([`storage:upload:${source.id}`, `db:create:${source.id}`]);
+      expect(f.calls).toEqual([
+        `storage:upload:${source.id}`,
+        `db:create:${source.id}`,
+        `queue:enqueue:${source.id}`,
+      ]);
+    });
+
+    it('enqueues the ingestion of the new source with its user', async () => {
+      const source = await f.service.upload(USER, NOTEBOOK, {
+        originalName: 'a.txt',
+        content: markdown,
+      });
+
+      expect(f.queue.ingestionJobs).toEqual([{ sourceId: source.id, userId: USER }]);
+    });
+
+    it('removes file and row again when the job cannot be enqueued, and rethrows', async () => {
+      f.queue.failNextEnqueue = true;
+
+      await expect(
+        f.service.upload(USER, NOTEBOOK, { originalName: 'a.txt', content: markdown }),
+      ).rejects.toThrow('Queue unavailable');
+
+      const id = f.calls[0]?.replace('storage:upload:', '');
+      expect(f.calls).toEqual([
+        `storage:upload:${id}`,
+        `db:create:${id}`,
+        `queue:enqueue:${id}`,
+        `storage:remove:${id}`,
+        `db:delete:${id}`,
+      ]);
+      expect(f.storage.files.size).toBe(0);
+      expect(f.sources.rows).toEqual([]);
+      // The upload was accepted, so it still counts.
+      expect(f.uploadEvents()).toBe(1);
+    });
+
+    it('rethrows the enqueue error when discarding the source fails as well', async () => {
+      f.queue.failNextEnqueue = true;
+      f.storage.failRemove = true;
+
+      await expect(
+        f.service.upload(USER, NOTEBOOK, { originalName: 'a.txt', content: markdown }),
+      ).rejects.toThrow('Queue unavailable');
+      expect(f.sources.rows).toHaveLength(1);
     });
 
     it('detects a PDF by content, whatever its name, and stores it as application/pdf', async () => {
@@ -136,6 +185,7 @@ describe('SourcesService', () => {
       expect(error).toBeInstanceOf(UnsupportedFileError);
       expect(f.uploadEvents()).toBe(0);
       expect(f.calls).toEqual([]);
+      expect(f.queue.ingestionJobs).toEqual([]);
     });
 
     it('accepts a PDF with exactly the maximum number of pages', async () => {
@@ -185,6 +235,7 @@ describe('SourcesService', () => {
 
       expect(f.storage.files.size).toBe(0);
       expect(f.sources.rows).toEqual([]);
+      expect(f.queue.ingestionJobs).toEqual([]);
     });
 
     it('rethrows the original error when removing the orphaned file fails as well', async () => {
@@ -208,6 +259,7 @@ describe('SourcesService', () => {
       });
       expect(f.sources.rows[0]?.storagePath).toBeNull();
       expect(f.uploadEvents()).toBe(1);
+      expect(f.queue.ingestionJobs).toEqual([{ sourceId: source.id, userId: USER }]);
     });
 
     it('enforces a configured limit below the schema default with 413', async () => {

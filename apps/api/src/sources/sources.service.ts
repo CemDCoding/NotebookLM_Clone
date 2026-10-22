@@ -4,6 +4,7 @@ import type { Source, SourceType } from '@notebooklm/shared';
 import { NotFoundError, PayloadTooLargeError } from '../common/errors';
 import { AppConfigService } from '../config';
 import { LimitsService } from '../limits/limits.service';
+import { QueueService } from '../queue/queue.service';
 import { sourceObjectPath, StorageService } from '../storage/storage.service';
 import { contentTypeFor, countPdfPages, detectFileType } from './file-validation';
 import { toSource } from './source.mapper';
@@ -42,6 +43,7 @@ export class SourcesService {
     private readonly storage: StorageService,
     private readonly limits: LimitsService,
     private readonly config: AppConfigService,
+    private readonly queue: QueueService,
   ) {}
 
   async list(userId: string, notebookId: string): Promise<Source[]> {
@@ -150,8 +152,8 @@ export class SourcesService {
   }
 
   /**
-   * Consumes the upload quota, then writes the file and the `pending` row.
-   * The ingestion job is enqueued here from M3 on.
+   * Consumes the upload quota, writes the file and the `pending` row, then
+   * enqueues the ingestion job (PE-16).
    */
   private async store(
     userId: string,
@@ -182,8 +184,37 @@ export class SourcesService {
       throw error;
     }
 
+    try {
+      await this.queue.enqueueIngestion(sourceId, userId);
+    } catch (error) {
+      // Without a job the source would stay `pending` forever. Undoing it lets
+      // the user simply upload again; the quota stays used, like any accepted upload.
+      await this.discardUnqueuedSource(userId, notebookId, sourceId);
+      throw error;
+    }
+
     this.logger.log({ message: 'Source created', sourceId, notebookId, type: accepted.type });
     return toSource(record);
+  }
+
+  /** File first, then the row, like a normal delete (PE-22). */
+  private async discardUnqueuedSource(
+    userId: string,
+    notebookId: string,
+    sourceId: string,
+  ): Promise<void> {
+    try {
+      await this.storage.remove(userId, [sourceId]);
+      await this.sources.delete(userId, notebookId, sourceId);
+    } catch (error) {
+      // The enqueue failure is what the client sees. A source left behind
+      // shows as `pending` and can be deleted by the user.
+      this.logger.error({
+        message: 'Failed to discard a source whose ingestion was not queued',
+        sourceId,
+        errorClass: error instanceof Error ? error.constructor.name : typeof error,
+      });
+    }
   }
 
   private async removeOrphanedFile(userId: string, sourceId: string): Promise<void> {
