@@ -36,6 +36,20 @@
       "when": 1792600387512,
       "tag": "0004_enable_rls_sources_and_usage_events",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792659646674,
+      "tag": "0005_create_chunks",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792659654074,
+      "tag": "0006_enable_rls_chunks",
+      "breakpoints": true
     }
   ]
 }

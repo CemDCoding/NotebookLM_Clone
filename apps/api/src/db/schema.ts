@@ -8,12 +8,14 @@
 import {
   boolean,
   index,
+  integer,
   pgEnum,
   pgSchema,
   pgTable,
   text,
   timestamp,
   uuid,
+  vector,
 } from 'drizzle-orm/pg-core';
 
 // Supabase's `auth.users`, owned by Supabase Auth. Only the key is declared, as
@@ -105,3 +107,42 @@ export const usageEvents = pgTable(
 
 export type UsageEventRow = typeof usageEvents.$inferSelect;
 export type NewUsageEventRow = typeof usageEvents.$inferInsert;
+
+// The dimension of `mistral-embed`, the only embedding model in every
+// environment (CLAUDE.md section 6). Changing it requires re-indexing all chunks.
+export const EMBEDDING_DIMENSIONS = 1024;
+
+// Text sections of a source with their embeddings, written by the ingestion
+// worker (apps/api/CLAUDE.md "sources und ingestion"). There is no vector index:
+// retrieval runs an exact search filtered by `notebook_id` (CLAUDE.md section 9).
+export const chunks = pgTable(
+  'chunks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // Deleting a source removes its chunks and vectors (CLAUDE.md section 7, Art. 17).
+    sourceId: uuid('source_id')
+      .notNull()
+      .references(() => sources.id, { onDelete: 'cascade' }),
+    // Denormalised, so the vector search filters by notebook without a join
+    // over `sources` (CLAUDE.md section 4).
+    notebookId: uuid('notebook_id')
+      .notNull()
+      .references(() => notebooks.id, { onDelete: 'cascade' }),
+    // Denormalised owner, as in `sources`; every query filters by it.
+    userId: uuid('user_id').notNull(),
+    content: text('content').notNull(),
+    embedding: vector('embedding', { dimensions: EMBEDDING_DIMENSIONS }).notNull(),
+    // PDF page the section starts on; empty for text, Markdown and pasted text.
+    page: integer('page'),
+    // Order of the section within its source.
+    position: integer('position').notNull(),
+  },
+  (table) => [
+    index('chunks_notebook_id_idx').on(table.notebookId),
+    index('chunks_user_id_idx').on(table.userId),
+    index('chunks_source_id_idx').on(table.sourceId),
+  ],
+);
+
+export type ChunkRow = typeof chunks.$inferSelect;
+export type NewChunkRow = typeof chunks.$inferInsert;
