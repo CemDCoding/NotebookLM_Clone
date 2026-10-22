@@ -1,6 +1,7 @@
 import { MODULE_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it } from 'vitest';
 import { RUN_MODE_MODULES } from './app.module';
+import { ChatModule } from './chat/chat.module';
 import { type ModuleImport, type RunMode, selectModules } from './config';
 import { HealthController } from './health/health.controller';
 import { IngestionModule } from './ingestion/ingestion.module';
@@ -8,6 +9,7 @@ import { UsageCleanupJob } from './limits/usage-cleanup.job';
 import { LlmModule } from './llm/llm.module';
 import { NotebooksModule } from './notebooks/notebooks.module';
 import { QueueModule } from './queue/queue.module';
+import { RetrievalModule } from './retrieval/retrieval.module';
 import { SourcesModule } from './sources/sources.module';
 
 type ModuleClass = abstract new (...args: never[]) => unknown;
@@ -81,6 +83,17 @@ describe('RUN_MODE_MODULES', () => {
 
     expect(modules).toContain(IngestionModule);
     expect(controllersOf(modules)).toEqual([HealthController]);
+  });
+
+  it.each<RunMode>(['all', 'api'])('loads chat and retrieval for RUN_MODE=%s', (runMode) => {
+    expect(modulesFor(runMode)).toEqual(expect.arrayContaining([ChatModule, RetrievalModule]));
+  });
+
+  it('loads neither chat nor retrieval for RUN_MODE=worker', () => {
+    const modules = modulesFor('worker');
+
+    expect(modules).not.toContain(ChatModule);
+    expect(modules).not.toContain(RetrievalModule);
   });
 
   // The job registers its handler and schedule only where workers run, so it
