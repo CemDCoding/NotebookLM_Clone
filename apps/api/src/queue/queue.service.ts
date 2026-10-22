@@ -9,6 +9,7 @@ import type { Job, PgBoss, Queue } from 'pg-boss';
 import { AppConfigService } from '../config';
 import {
   CLEANUP_USAGE_EVENTS_QUEUE,
+  INGEST_RETRY_LIMIT,
   INGEST_SOURCE_QUEUE,
   type IngestSourceJob,
   type QueueName,
@@ -30,10 +31,8 @@ export interface WorkOptions {
   concurrency?: number;
 }
 
-// pg-boss retries a failed ingestion up to three times (PE-14). The delay
-// doubles from 30 s, so a provider outage or rate limit has time to pass
-// instead of burning all attempts within a second.
-const INGEST_RETRY_LIMIT = 3;
+// The retry delay doubles from 30 s, so a provider outage or rate limit has
+// time to pass instead of burning all attempts within a second.
 const INGEST_RETRY_DELAY_SECONDS = 30;
 // How long a graceful stop waits for running jobs before it gives up.
 const STOP_TIMEOUT_MS = 10_000;
@@ -56,9 +55,11 @@ const QUEUES: readonly { name: QueueName; options: Omit<Queue, 'name'> }[] = [
 export class QueueService implements OnModuleInit, BeforeApplicationShutdown {
   private readonly logger = new Logger(QueueService.name);
 
+  // Both dependencies are named explicitly: the seed runs under tsx, which
+  // emits no decorator metadata, so Nest could not infer the config by type.
   constructor(
     @Inject(PG_BOSS) private readonly boss: JobQueue,
-    private readonly config: AppConfigService,
+    @Inject(AppConfigService) private readonly config: AppConfigService,
   ) {}
 
   /** Whether this instance processes jobs (RUN_MODE `all` or `worker`). */

@@ -1,9 +1,10 @@
 import { Logger } from '@nestjs/common';
+import { SELF_DECLARED_DEPS_METADATA } from '@nestjs/common/constants';
 import type { Job, WorkHandler } from 'pg-boss';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppConfigService, RunMode } from '../config';
+import { AppConfigService, type RunMode } from '../config';
 import { CLEANUP_USAGE_EVENTS_QUEUE, INGEST_SOURCE_QUEUE } from './queue.jobs';
-import { type JobQueue, QueueService } from './queue.service';
+import { type JobQueue, PG_BOSS, QueueService } from './queue.service';
 
 const SOURCE = '3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d';
 const USER = '0b6c3f1e-1d2a-4c3b-9e4f-5a6b7c8d9e0f';
@@ -52,6 +53,20 @@ function job<T>(data: T): Job<T> {
 }
 
 describe('QueueService', () => {
+  // The seed runs under tsx, which emits no decorator metadata. Nest can then
+  // only resolve dependencies that are declared with @Inject.
+  it('declares every constructor dependency explicitly', () => {
+    const declared = Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, QueueService) as
+      { index: number; param: unknown }[] | undefined;
+
+    expect(declared).toEqual(
+      expect.arrayContaining([
+        { index: 0, param: PG_BOSS },
+        { index: 1, param: AppConfigService },
+      ]),
+    );
+  });
+
   beforeEach(() => {
     vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
