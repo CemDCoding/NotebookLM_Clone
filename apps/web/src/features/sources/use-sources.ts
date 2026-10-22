@@ -1,5 +1,6 @@
 import {
   SourceListResponseSchema,
+  type Source,
   type SourceListResponse,
   type UpdateSourceRequest,
 } from '@notebooklm/shared';
@@ -17,12 +18,28 @@ function sourcePath(notebookId: string, sourceId: string): string {
   return `${sourcesPath(notebookId)}/${encodeURIComponent(sourceId)}`;
 }
 
+/** Polling interval while a source is still being ingested (PE-36). */
+export const SOURCE_POLL_INTERVAL_MS = 2_000;
+
+/**
+ * Polls only while a source is waiting or being processed, so the status switches to
+ * ready or failed without a reload and the polling stops once every source is done.
+ */
+export function sourcesRefetchInterval(sources: readonly Source[] | undefined): number | false {
+  const hasUnfinished = sources?.some(
+    (source) => source.status === 'pending' || source.status === 'processing',
+  );
+  return hasUnfinished ? SOURCE_POLL_INTERVAL_MS : false;
+}
+
 export function useSources(notebookId: string) {
   return useQuery({
     queryKey: sourceKeys.list(notebookId),
     queryFn: ({ signal }) =>
       apiFetch(sourcesPath(notebookId), { schema: SourceListResponseSchema, signal }),
     select: (data) => data.sources,
+    // The interval sees the raw response, not the selected list.
+    refetchInterval: (query) => sourcesRefetchInterval(query.state.data?.sources),
     retry: retryUnlessNotFound,
   });
 }

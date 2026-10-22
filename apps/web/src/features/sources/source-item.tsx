@@ -62,7 +62,7 @@ export function SourceItem({ notebookId, source }: SourceItemProps) {
         >
           {source.title}
         </p>
-        <SourceStatusBadge status={source.status} />
+        <SourceStatusBadge status={source.status} error={source.error} />
       </div>
       <Switch
         size="sm"
