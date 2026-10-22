@@ -187,3 +187,5 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 
 **Nächster Schritt**
 - Sobald Railway Hobby-Builds freigibt: M1-DEP-01 fortsetzen. Das erste Deployment übernimmt die neuen Secrets.
+- Bewusst weiter mit M3 auf `dev`, die Deployments folgen einzeln: M1 steht auf `master`, M2 wird gezielt bis zum Commit `2062c5b` nach `master` gemergt (Stand M2 ohne M3), erst danach M3. So bekommt jeder Meilenstein seinen eigenen Smoke-Test.
+- `apps/api/test/support/**` gehört ab M3 ausdrücklich M3-API-04, damit die gemeinsame Test-App nicht wieder außerhalb des Eigentums geändert wird.
