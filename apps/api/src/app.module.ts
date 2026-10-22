@@ -12,8 +12,11 @@ import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { AppConfigModule, type Env, type RunModeModules, selectModules } from './config';
 import { DbModule } from './db/db.module';
 import { HealthModule } from './health/health.module';
+import { IngestionModule } from './ingestion/ingestion.module';
 import { LimitsModule } from './limits/limits.module';
+import { LlmModule } from './llm/llm.module';
 import { NotebooksModule } from './notebooks/notebooks.module';
+import { QueueModule } from './queue/queue.module';
 import { SourcesModule } from './sources/sources.module';
 import { StorageModule } from './storage/storage.module';
 
@@ -26,11 +29,12 @@ const THROTTLE_LIMIT = 120;
 // Feature modules by RUN_MODE. Later milestones register their modules here.
 // The worker needs the database too and still answers `/health` for Railway.
 // Auth loads in every mode, so any controller is protected by default.
-// Storage serves both sides: the API uploads and deletes, the worker downloads.
-const MODULES: RunModeModules = {
-  always: [DbModule, AuthModule, HealthModule, StorageModule],
+// Storage, queue and LLM serve both sides: the API uploads, enqueues and chats,
+// the worker downloads, processes jobs and embeds. None of them has a controller.
+export const RUN_MODE_MODULES: RunModeModules = {
+  always: [DbModule, AuthModule, HealthModule, StorageModule, QueueModule, LlmModule],
   http: [LimitsModule, NotebooksModule, SourcesModule],
-  worker: [],
+  worker: [IngestionModule],
 };
 
 @Module({})
@@ -43,7 +47,7 @@ export class AppModule implements NestModule {
         ThrottlerModule.forRoot({
           throttlers: [{ ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT }],
         }),
-        ...selectModules(env.RUN_MODE, MODULES),
+        ...selectModules(env.RUN_MODE, RUN_MODE_MODULES),
       ],
       providers: [
         { provide: APP_GUARD, useClass: ThrottlerGuard },
