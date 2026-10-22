@@ -189,3 +189,45 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - Sobald Railway Hobby-Builds freigibt: M1-DEP-01 fortsetzen. Das erste Deployment übernimmt die neuen Secrets.
 - Bewusst weiter mit M3 auf `dev`, die Deployments folgen einzeln: M1 steht auf `master`, M2 wird gezielt bis zum Commit `2062c5b` nach `master` gemergt (Stand M2 ohne M3), erst danach M3. So bekommt jeder Meilenstein seinen eigenen Smoke-Test.
 - `apps/api/test/support/**` gehört ab M3 ausdrücklich M3-API-04, damit die gemeinsame Test-App nicht wieder außerhalb des Eigentums geändert wird.
+
+## 2026-10-22 (Nachmittag) – Ingestion auf `dev`
+
+**Meilenstein:** M3 – Wellen 1 bis 3 auf `dev` integriert, M3-DEP-01 offen. M1-DEP-01 weiter blockiert (Railway, Stand 12:30 UTC: Hobby-Builds gesperrt)
+
+**Umgesetzt (M3-W1: M3-API-01, M3-WEB-01)**
+- Tabelle `chunks` mit `vector(1024)`, RLS ohne Policies, Fremdschlüssel auf `sources` und `notebooks` mit `ON DELETE CASCADE`, Indizes auf `notebook_id`, `user_id` und `source_id`. Bewusst ohne Vektorindex, weil die Suche exakt ist (§9). Gegen die dev-Datenbank geprüft, nicht nur aus dem Bericht übernommen.
+- Gerüst für Queue, LLM und Ingestion. Die App startet in allen drei `RUN_MODE`s. Welche Module laden, wurde pro Modus am Build verglichen: `worker` bedient nur `/health`, `api` lädt keine Ingestion.
+- Web pollt alle 2 Sekunden, solange eine Quelle wartet oder verarbeitet wird, und zeigt bei „fehlgeschlagen“ den Grund. Handtest mit einem Skript außerhalb des Repositorys, das in dev den noch fehlenden Worker nachspielte: Status wechselt ohne Reload, das Polling stoppt, der Hinweis erscheint per Maus und per Tastatur.
+
+**Umgesetzt (M3-W2: M3-API-02, M3-API-03, M3-API-04)**
+- Textextraktion seitenweise, Chunking nach Zeichen (höchstens 3.000, 400 Überlappung).
+- Embedding-Provider für OpenAI-kompatible APIs mit Batches und Backoff bei `429` und `5xx`.
+- pg-boss-Queue: Ein Upload reiht `ingest-source` ein, ein täglicher Job räumt `usage_events` auf. Scheitert das Einreihen, entfernt der Service Datei und Zeile wieder, sonst bliebe die Quelle für immer auf „wartet“. Das Kontingent bleibt verbraucht.
+- Ein Upload in dev erzeugte genau einen Job: drei Wiederholungen mit 30 Sekunden Abstand und Backoff, `singletonKey` gleich der `sourceId`, als Nutzlast nur `sourceId` und `userId`. Dokumentinhalte landen also nicht in den pg-boss-Tabellen.
+
+**Umgesetzt (M3-W3: M3-API-05, M3-API-06)**
+- Worker mit eigenem Repository unter `ingestion/`. In der Transaktion wird zuerst der Status `ready` gesetzt. Das sperrt die Zeile gegen ein gleichzeitiges Löschen. Danach folgen die Chunks in Paketen zu 100. Ergeben sich 0 Chunks, endet die Quelle als „fehlgeschlagen“ mit der Meldung zu fehlendem lesbarem Text. Auslöser war ein Hinweis aus dem Review von M3-API-02: Text nur aus unsichtbaren Zeichen besteht die Extraktion, ergibt aber keinen Abschnitt. Eine zwischenzeitlich gelöschte Quelle beendet den Job still. Geloggt werden nur IDs, Dauer, Anzahl der Chunks und Fehlerklasse.
+- Seed als Nest-Application-Context mit `AppConfig`, `Db`, `Storage` und `Queue`, fest mit `RUN_MODE=api` und ohne `IngestionModule`. Ablauf: Storage des Demo-Accounts leeren, Notebooks ersetzen, Beispielquelle hochladen, Status `pending`, Job einreihen. Verarbeiten muss ihn die laufende API. Der Seed schreibt kein `usage_event`, weil er eine Betreiberaktion ist.
+- Die Beispielquelle ist selbst verfasst. Sie enthält einen Fakt, den kein Modell aus dem Training kennen kann (das Maskottchen ist eine Eule namens Fidelia). So zeigt die Demo-Frage im Loom-Video, dass die Antwort aus der Quelle stammt.
+
+**Integrationspunkte**
+- Checks nach jeder Welle in jedem Worktree selbst ausgeführt, den Zuwachs pro Paket notiert und nach dem Merge die Summe geprüft. API-Tests: 288 nach W1, 382 nach W2 (385 mit Fix), 424 nach W3. Dazu 95 Web- und 40 Shared-Tests.
+- Vorbedingungen für den Test in W3 belegt, ohne Werte auszugeben: Der Mistral-Key ist gültig (`GET /v1/models` → `200`), die Projekt-Ref der dev-`.env` ist eine andere als die von prod.
+- Ende-zu-Ende in dev: Eine dreiseitige Text-PDF wird „bereit“, mit 3 Chunks auf den Seiten 1 bis 3. Eine PDF ohne Textebene wird „fehlgeschlagen“, mit verständlicher Meldung. Markdown wird „bereit“, ohne Seitenzahl. In `chunks` passen `notebook_id` und `user_id` zur Quelle, es gibt keine Duplikate und keine „bereit“-Quelle ohne Chunks. Alle Jobs sind `completed`, ohne Wiederholung.
+- Der erneute Seed legt die Beispielquelle an, und der API-Prozess verarbeitet sie, nicht der Seed. Die Logs enthalten nur IDs, Status, Dauer und Fehlerklasse.
+
+**Probleme und Erkenntnisse**
+- Das Review fand einen Fehler, den die grünen Tests nicht zeigten: Der Aufräum-Job hing in `LimitsModule`, und das lädt nur im HTTP-Teil. Im Modus `worker` wäre er nie gelaufen. Damit hätte die Trennung von API und Worker „ohne Codeänderung“ (§9) nicht gestimmt. Belegt durch den Start in allen drei Modi, behoben am Integrationspunkt: `LimitsModule` lädt jetzt immer, es hat keinen Controller. Der neue Test war vorher genau für `worker` rot.
+- Vor W3 das Eigentum gegen den Code abgeglichen und zwei Lücken gefunden. Erstens startet die gemeinsame Test-App das `AppModule` im Modus `all`, und die `FakeQueue` braucht dann `work`. `test/support/**` ging deshalb an M3-API-05. Zweitens läuft der Seed unter `tsx`, und `tsx` erzeugt keine Decorator-Metadaten. Das wurde gemessen, mit Gegenprobe gegen den Build von `nest build`. Vor dem Start der Agents behoben: `QueueService` nennt seine Abhängigkeit per `@Inject`, der Test dazu war vorher rot. Ohne den Abgleich hätten beide Agents außerhalb ihres Eigentums arbeiten müssen oder einen Fehler gesucht, den ihre Tests nicht zeigen.
+- M3-API-04 hat den Test der Validierungs-Pipe außerhalb seines Eigentums angepasst, weil der Test das ganze `AppModule` startet und pg-boss sonst die Datenbank erreicht hätte. Übernommen, weil minimal und nur für Tests.
+- pg-boss 12 ist ein reines ESM-Paket, die API bleibt CommonJS. `require(esm)` funktioniert unter Node 24. pg-boss verlangt mindestens Node 22.12, deshalb muss im Railway-Build-Log Node 24 stehen (M3-DEP-01).
+- Nicht messbar unter Windows: ob pg-boss sauber herunterfährt. `SIGINT` aus Git Bash erreicht `node.exe` nicht zuverlässig, deshalb wurde daraus kein Schluss gezogen. Geprüft wird es im Railway-Log, wo der Prozess `SIGTERM` bekommt.
+- Eigener Fehler in der Reihenfolge: Der Seed lief vor der Prüfung der Chunks und hat die Test-Uploads gelöscht, weil er alle Notebooks des Demo-Accounts ersetzt. Die Prüfung wurde in einem neuen Notebook nachgeholt. Regel seitdem: Prüfungen in der Datenbank immer vor Aktionen, die Daten zurücksetzen.
+- Aufräumen: Ein hängender Befehl eines Agents (`cat >` ohne Eingabe) verhinderte das Archivieren seiner Sitzung. Nach dem Beenden des Prozesses ließ sie sich archivieren. `git worktree remove` scheiterte, solange `pnpm dev` im Hauptcheckout lief: pnpm verknüpft Dateien per Hardlink über alle Checkouts, und ein laufendes `esbuild.exe` sperrt sie auch im Worktree.
+- KI-Fehleinschätzung: Claude hatte nach W1 und W2 angegeben, `pnpm dev` im Hauptcheckout halte die Worktrees nicht fest. Das war falsch, siehe den Punkt davor.
+- Notiert für später: Läuft ein Job in den Timeout von pg-boss (Standard 15 Minuten), wird der Handler nicht mehr aufgerufen, und die Quelle könnte auf „wird verarbeitet“ stehen bleiben. Bei M5-API-01 prüfen, ob das realistisch ist. `withBackoff` wiederholt keine Verbindungsabbrüche, die fängt der Retry von pg-boss ab (ggf. in ADR 3 erwähnen). Hat der Seed das Passwort zurückgesetzt und hält der Browser noch ein altes Cookie, loggt `apps/web` `AuthApiError refresh_token_not_found` als Fehler. Das wird in M5-WEB-01 sauber behandelt.
+
+**Nächster Schritt**
+- Sobald Railway Hobby-Builds freigibt: M1-DEP-01, danach M2-DEP-01 (gezielt bis `2062c5b`), erst dann M3-DEP-01. Jeder Meilenstein bekommt seinen eigenen Smoke-Test.
+- Der Seed auf `dev` setzt die Tabellen `sources` und `chunks` voraus und legt ein pg-boss-Schema an. Der Prod-Seed läuft deshalb immer aus dem Code, der gerade auf `master` deployt ist, in einem temporären Worktree von `master`, nie aus dem Hauptcheckout auf `dev`.
+- Die Testdateien für den Smoke-Test von M3 (dreiseitige Text-PDF, PDF ohne Text, Markdown) liegen außerhalb des Repositorys und bleiben bis M3-DEP-01 aufbewahrt.
