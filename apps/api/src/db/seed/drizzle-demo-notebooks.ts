@@ -1,10 +1,13 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import type { Database } from '../db.module';
+import { type Database, DRIZZLE } from '../db.module';
 import { notebooks } from '../schema';
 import type { DemoNotebookRepository } from './demo-seed';
 
+@Injectable()
 export class DrizzleDemoNotebooks implements DemoNotebookRepository {
-  constructor(private readonly db: Database) {}
+  // Named explicitly: the seed runs under tsx, which emits no decorator metadata.
+  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
   replaceAll(userId: string, title: string): Promise<{ deletedIds: string[]; createdId: string }> {
     return this.db.transaction(async (tx) => {
