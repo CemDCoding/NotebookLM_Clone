@@ -7,6 +7,8 @@ import { HealthController } from './health/health.controller';
 import { IngestionModule } from './ingestion/ingestion.module';
 import { UsageCleanupJob } from './limits/usage-cleanup.job';
 import { LlmModule } from './llm/llm.module';
+import { ModelsController } from './llm/models.controller';
+import { ModelsModule } from './llm/models.module';
 import { NotebooksModule } from './notebooks/notebooks.module';
 import { QueueModule } from './queue/queue.module';
 import { RetrievalModule } from './retrieval/retrieval.module';
@@ -87,6 +89,13 @@ describe('RUN_MODE_MODULES', () => {
 
   it.each<RunMode>(['all', 'api'])('loads chat and retrieval for RUN_MODE=%s', (runMode) => {
     expect(modulesFor(runMode)).toEqual(expect.arrayContaining([ChatModule, RetrievalModule]));
+  });
+
+  it.each<RunMode>(['all', 'api'])('serves the model list for RUN_MODE=%s', (runMode) => {
+    const modules = modulesFor(runMode);
+
+    expect(modules).toContain(ModelsModule);
+    expect(controllersOf(modules)).toContain(ModelsController);
   });
 
   it('loads neither chat nor retrieval for RUN_MODE=worker', () => {

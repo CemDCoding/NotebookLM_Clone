@@ -16,6 +16,7 @@ import { HealthModule } from './health/health.module';
 import { IngestionModule } from './ingestion/ingestion.module';
 import { LimitsModule } from './limits/limits.module';
 import { LlmModule } from './llm/llm.module';
+import { ModelsModule } from './llm/models.module';
 import { NotebooksModule } from './notebooks/notebooks.module';
 import { QueueModule } from './queue/queue.module';
 import { RetrievalModule } from './retrieval/retrieval.module';
@@ -36,10 +37,11 @@ const THROTTLE_LIMIT = 120;
 // Limits load everywhere too: the API checks them, the worker runs their daily
 // usage cleanup job.
 // Chat and retrieval are HTTP-only: the chat endpoint is the only consumer of
-// the vector search, and the worker needs neither.
+// the vector search, and the worker needs neither. The model list only serves
+// the chat picker.
 export const RUN_MODE_MODULES: RunModeModules = {
   always: [DbModule, AuthModule, HealthModule, StorageModule, QueueModule, LlmModule, LimitsModule],
-  http: [NotebooksModule, SourcesModule, RetrievalModule, ChatModule],
+  http: [NotebooksModule, SourcesModule, RetrievalModule, ChatModule, ModelsModule],
   worker: [IngestionModule],
 };
 

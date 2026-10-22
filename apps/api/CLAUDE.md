@@ -170,7 +170,10 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 
 - Schnittstellen `ChatProvider` (gestreamte Completion, nimmt ein `AbortSignal` entgegen) und `EmbeddingProvider` (Batch-Embedding).
 - Eine Implementierung für **OpenAI-kompatible APIs** deckt Mistral und Ollama ab. Konfiguriert werden nur Base-URL, API-Key und Modellname.
-- Eine `ModelRegistry` liefert die erlaubten Chat-Modelle aus der Konfiguration. Der Chat-Endpunkt akzeptiert nur Modelle aus dieser Liste. Ohne Angabe wird das erste, günstigste Modell verwendet.
+- Eine `ModelRegistry` liefert die erlaubten Chat-Modelle aus der Konfiguration. Der Chat-Endpunkt akzeptiert nur Modelle aus dieser Liste. Ohne Angabe wird das erste, günstigste Modell verwendet. Ein unbekanntes Modell ergibt `400` (`VALIDATION_FAILED`).
+- **Ollama-Modelle** tragen die ID `ollama:<name>` (PE-32), damit die ID allein den Provider bestimmt. Sie erscheinen nur, wenn `OLLAMA_BASE_URL` gesetzt ist, und hinter den Mistral-Modellen. An Ollama geht der Name ohne Präfix.
+- **`GET /models`** liefert die Liste für den Modell-Picker als `ModelListResponse` (PE-21): ID, lesbares Label (Mistral z. B. „Mistral Small“, Ollama mit „(Lokal)“), Provider, `isLocal` und genau ein `isDefault`. Das Frontend kennt keine Modellnamen. Der Controller liegt im eigenen `ModelsModule`, das nur in den HTTP-Modi lädt, weil das `LlmModule` auch im Worker läuft.
+- Die `ChatProviderFactory` (`CHAT_PROVIDER_FACTORY`) liefert zum Provider eines aufgelösten Modells den passenden `ChatProvider`. Chat-Anfragen werden nicht wiederholt, ein Fehler geht direkt an den Chat-Endpunkt. Bei Abbruch endet die Iteration mit dem Abbruchgrund des Signals, nie still, damit keine abgeschnittene Antwort als vollständig gilt.
 - Fachmodule hängen nur von den Schnittstellen ab. In Tests werden Fake-Provider injiziert.
 
 ### account
