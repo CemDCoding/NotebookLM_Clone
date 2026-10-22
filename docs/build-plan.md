@@ -76,8 +76,8 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | fertig |
 | M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | fertig |
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
-| M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | offen |
-| M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | offen |
+| M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | in Arbeit |
+| M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | in Arbeit |
 | M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
 | M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | offen |
 | M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
@@ -101,6 +101,22 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M7-OPS-01 | ADR 0005 Spracheingabe (optional) | M7 | OPS | W1 | M6-DEP-01 | S | offen |
 | M7-WEB-01 | Spracheingabe (optional) | M7 | WEB | W2 | M7-OPS-01 | M | offen |
 | M7-DEP-01 | Deployment M7 (optional) | M7 | HUM | W3 | alle M7 | H | offen |
+
+### Ausstehende Deployments (bewusste Abweichung von `CLAUDE.md §10`)
+
+Seit 2026-10-21 sperrt Railway nach einem Sicherheitsvorfall die Builds für Hobby (Devlog 2026-10-21 und 2026-10-22). M1 bis M3 sind deshalb nicht live. Die Entwicklung läuft trotzdem auf `dev` weiter, ab M4 ausdrücklich vom Entwickler freigegeben, obwohl M4-SH-01 und M4-API-01 auf M3-DEP-01 verweisen.
+
+Die Deployments werden **einzeln und in dieser Reihenfolge** nachgeholt. Jedes bekommt den **vollständigen Smoke-Test** aus seinem `DEP`-Paket in Abschnitt 6, keiner wird übersprungen oder mit dem nächsten zusammengelegt:
+
+| Paket | Stand, der nach `master` geht | Status |
+|---|---|---|
+| M1-DEP-01 | `09d6934` (liegt schon auf `master`) | offen |
+| M2-DEP-01 | `2062c5b` (M2 ohne M3), gezielt statt ganz `dev` | offen |
+| M3-DEP-01 | `55d35a0` (M3 ohne M4), gezielt statt ganz `dev` | offen |
+
+- **M4-DEP-01 beginnt erst, wenn M1-DEP-01 bis M3-DEP-01 auf `fertig` stehen.**
+- Braucht ein Meilenstein nach seinem Smoke-Test einen Fix, entsteht er auf einem Branch von `master`, geht nach `master` und danach `master` nach `dev`.
+- Der Prod-Seed läuft immer aus dem Code, der gerade auf `master` deployt ist, in einem temporären Worktree von `master` (`git worktree add --detach`), nie aus dem Hauptcheckout auf `dev`. Der Seed auf `dev` setzt `sources` und `chunks` voraus und legt ein pg-boss-Schema an.
 
 ---
 
@@ -445,14 +461,16 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M1-DEP-01 – Deployment M1 [Mensch]
 
-- `db:seed:prod` mit `apps/api/.env.production` ausführen (PE-26).
+- Deploy-Log zeigt die Migrationen `0001` und `0002`, danach `GET /health` → `200` mit `database: up`.
+- `db:seed:prod` mit `apps/api/.env.production` ausführen (PE-26), aus einem Worktree von `master` (Abschnitt 3 „Ausstehende Deployments“). Das Log nennt Host und Projekt-URL von prod.
 - **Smoke-Test:**
   - [ ] `/notebooks` ohne Login leitet auf `/login` um.
   - [ ] Login mit dem Demo-Account klappt. Die Login-Seite hat keine Registrierung und kein „Passwort vergessen“.
   - [ ] Notebook anlegen, umbenennen und löschen klappt.
   - [ ] `GET /notebooks` ohne bzw. mit ungültigem Token → `401`.
-  - [ ] Supabase-REST mit Anon-Key auf `notebooks` liefert keine Zeilen (RLS).
+  - [ ] Supabase-REST mit Anon-Key auf `notebooks` liefert keine Zeilen (RLS), geprüft bei mindestens einer vorhandenen Zeile.
   - [ ] Registrierung über die Supabase-API mit Anon-Key wird abgelehnt.
+  - [ ] Die Browser-Konsole zeigt keinen `404` beim Prefetch von `/login` mehr.
 - README-Stand, Devlog.
 
 ### M2 – Quellen
@@ -470,6 +488,8 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M2-DEP-01 – Deployment M2 [Mensch]
 
+- Nach `master` geht gezielt der Stand `2062c5b`, nicht ganz `dev` (Abschnitt 3 „Ausstehende Deployments“).
+- Deploy-Log zeigt die Migrationen `0003` und `0004`. Der private Bucket `sources` existiert in prod.
 - **Smoke-Test:**
   - [ ] PDF, TXT, MD und eingefügten Text hinzufügen. Alle erscheinen mit Status „wartet“.
   - [ ] Eine umbenannte Binärdatei `.txt` wird mit verständlicher Meldung abgelehnt.
@@ -495,13 +515,18 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M3-DEP-01 – Deployment M3 [Mensch]
 
-- Seed gegen Produktion erneut ausführen, damit die Beispielquelle entsteht.
+- Nach `master` geht gezielt der Stand `55d35a0`, nicht ganz `dev` (Abschnitt 3 „Ausstehende Deployments“).
+- Build-Log zeigt Node 24 (pg-boss 12 verlangt mindestens 22.12). Deploy-Log zeigt die Migrationen `0005` und `0006`, beim Start entsteht das Schema `pgboss`.
+- Seed gegen Produktion erneut ausführen, aus einem Worktree von `master`, damit die Beispielquelle entsteht. Sie wird live „bereit“.
 - **Smoke-Test:**
   - [ ] Eine PDF mit mehreren Seiten wechselt live von „wartet“ über „wird verarbeitet“ auf „bereit“, ohne Reload.
   - [ ] Eine PDF ohne Text wird „fehlgeschlagen“, mit verständlicher Meldung.
+  - [ ] Eine Markdown-Datei wird „bereit“.
   - [ ] `chunks` enthält Zeilen mit `page`, `notebook_id` und `user_id`.
   - [ ] Railway-Logs zeigen nur IDs, Status und Dauer, keine Inhalte.
+  - [ ] Bei einem Redeploy zeigt das Railway-Log, dass pg-boss nach `SIGTERM` sauber stoppt (unter Windows nicht messbar).
   - [ ] Ausgaben in der Mistral-Konsole sind plausibel.
+- Testdateien: `D:\Private Projekte\nlm-testdateien` (`text-dreiseitig.pdf`, `ohne-text.pdf`, `notiz.md`).
 - README-Stand, Devlog.
 
 ### M4 – Chat mit Zitaten
@@ -519,6 +544,7 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M4-DEP-01 – Deployment M4 [Mensch]
 
+- Vorbedingung: M1-DEP-01 bis M3-DEP-01 stehen auf `fertig`, jeweils mit vollständigem Smoke-Test (Abschnitt 3 „Ausstehende Deployments“).
 - **Smoke-Test:**
   - [ ] Eine Frage zur Beispielquelle ergibt eine deutsche Antwort, gestreamt (nicht als Block), mit `[n]`-Badges.
   - [ ] Hover zeigt Titel, Seite und Auszug. Klick öffnet das Seitenpanel mit dem Abschnitt.
@@ -1313,14 +1339,14 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „Datenbank“`; `CLAUDE.md §4`; PE-02, PE-08
 - **Abhängigkeiten:** M3-DEP-01
 - **Parallel möglich mit:** M4-SH-01
-- **Dateien (Eigentum):** `apps/api/src/db/schema.ts`, `apps/api/src/db/migrations/**`, `apps/api/src/app.module.ts`, `apps/api/src/retrieval/retrieval.module.ts`, `apps/api/src/chat/chat.module.ts`
+- **Dateien (Eigentum):** `apps/api/src/db/schema.ts`, `apps/api/src/db/migrations/**`, `apps/api/src/app.module.ts`, `apps/api/src/app.module.test.ts`, `apps/api/src/retrieval/retrieval.module.ts`, `apps/api/src/chat/chat.module.ts`
 - **Nicht anfassen:** übrige Dateien dieser Ordner
 - **Umsetzung:**
   1. `messages` laut §4. `citations jsonb` nimmt Einträge im Format `StoredCitation` auf, Standard `[]`. Indizes `(notebook_id, created_at)` und `user_id`. RLS-Migration. Gegen dev anwenden.
-  2. Stubs registrieren.
+  2. Stubs registrieren, beide in `RUN_MODE_MODULES.http`: Nur der Chat-Endpunkt braucht Retrieval, der Worker keins von beiden.
 - **Schnittstellen:** keine
-- **Akzeptanzkriterien:** Migration angewendet, RLS aktiv.
-- **Tests:** keine neuen
+- **Akzeptanzkriterien:** Migration angewendet, RLS aktiv. `ChatModule` und `RetrievalModule` laden in `all` und `api`, nicht in `worker`.
+- **Tests:** `app.module.test.ts` um die Zuordnung der beiden Module zu den `RUN_MODE`s ergänzen
 - **Doku-Pflichten:** keine
 - **Aufwand:** S
 - **Kürzbar bei Zeitnot:** nein
