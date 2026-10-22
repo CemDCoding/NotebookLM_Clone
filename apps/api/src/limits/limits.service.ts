@@ -10,6 +10,11 @@ import { UsageEventsRepository } from './usage-events.repository';
 /** Advisory-lock key of the global daily upload limit (PE-11). */
 export const GLOBAL_UPLOAD_LOCK_KEY = 'limits:upload:global';
 
+/** Advisory-lock key of the chat limits (PE-11). */
+export const GLOBAL_CHAT_LOCK_KEY = 'limits:chat:global';
+
+const HOUR_MS = 60 * 60 * 1000;
+
 /**
  * Central check of all business limits (apps/api/CLAUDE.md "limits"). Services
  * call it before the action; a reached limit throws `LimitExceededError`, which
@@ -78,6 +83,46 @@ export class LimitsService {
       }
 
       await this.usageEvents.insert(tx, 'upload', userId);
+    });
+  }
+
+  /**
+   * Accepts a chat request and records it as a usage event before the model
+   * is called, because the request costs money from then on, even if the
+   * client aborts. The per-user window rolls over the last 60 minutes, the
+   * global limit counts the calendar day in Berlin (PE-10).
+   *
+   * One global lock serialises both checks: the per-user count is read inside
+   * the same critical section, so a per-user lock would add nothing (PE-11).
+   *
+   * Deleting the chat history never returns quota: usage events have no link
+   * to messages (CLAUDE.md section 7).
+   */
+  async acceptChat(userId: string): Promise<void> {
+    const { chatRequestsPerUserPerHour, chatRequestsGlobalPerDay } = this.config.limits;
+    await this.transactions.run([GLOBAL_CHAT_LOCK_KEY], async (tx) => {
+      const now = new Date();
+
+      const userRequestsLastHour = await this.usageEvents.countSince(
+        tx,
+        'chat',
+        new Date(now.getTime() - HOUR_MS),
+        userId,
+      );
+      if (userRequestsLastHour >= chatRequestsPerUserPerHour) {
+        throw new LimitExceededError(
+          `Du hast das Stundenlimit von ${chatRequestsPerUserPerHour} Fragen erreicht. Versuche es später erneut.`,
+        );
+      }
+
+      const requestsToday = await this.usageEvents.countSince(tx, 'chat', startOfBerlinDay(now));
+      if (requestsToday >= chatRequestsGlobalPerDay) {
+        throw new LimitExceededError(
+          `Die Demo hat ihr Tageslimit von ${chatRequestsGlobalPerDay} Fragen erreicht. Bitte versuche es morgen erneut.`,
+        );
+      }
+
+      await this.usageEvents.insert(tx, 'chat', userId);
     });
   }
 }
