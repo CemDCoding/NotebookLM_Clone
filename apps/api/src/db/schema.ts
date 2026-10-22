@@ -9,6 +9,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgSchema,
   pgTable,
@@ -146,3 +147,40 @@ export const chunks = pgTable(
 
 export type ChunkRow = typeof chunks.$inferSelect;
 export type NewChunkRow = typeof chunks.$inferInsert;
+
+// Mirrors `MessageRoleSchema` in `packages/shared`; the database enforces it as well.
+export const messageRole = pgEnum('message_role', ['user', 'assistant']);
+
+// Chat history per notebook (apps/api/CLAUDE.md "chat"). A question and its
+// answer are written together only after the stream has completed.
+export const messages = pgTable(
+  'messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // Deleting a notebook removes its chat history (CLAUDE.md section 7, Art. 17).
+    notebookId: uuid('notebook_id')
+      .notNull()
+      .references(() => notebooks.id, { onDelete: 'cascade' }),
+    // Denormalised owner, as in `sources`; every query filters by it.
+    userId: uuid('user_id').notNull(),
+    role: messageRole('role').notNull(),
+    content: text('content').notNull(),
+    // Only answers record the model that wrote them; null for questions.
+    model: text('model'),
+    // `StoredCitation` references from `packages/shared` only, never source
+    // text, so deleting a source leaves nothing of it behind (PE-08). Typed as
+    // `unknown[]` because the contract is validated with its Zod schema on read.
+    citations: jsonb('citations').$type<unknown[]>().notNull().default([]),
+    // `now()` is fixed per transaction, so a question and its answer saved
+    // together share the default. The writer sets distinct values to keep the order.
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  // The history is read per notebook in chronological order.
+  (table) => [
+    index('messages_notebook_id_created_at_idx').on(table.notebookId, table.createdAt),
+    index('messages_user_id_idx').on(table.userId),
+  ],
+);
+
+export type MessageRow = typeof messages.$inferSelect;
+export type NewMessageRow = typeof messages.$inferInsert;

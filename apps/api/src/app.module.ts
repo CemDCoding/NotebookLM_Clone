@@ -7,6 +7,7 @@ import {
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 import { AllExceptionsFilter, RequestIdMiddleware } from './common/filters';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { AppConfigModule, type Env, type RunModeModules, selectModules } from './config';
@@ -17,6 +18,7 @@ import { LimitsModule } from './limits/limits.module';
 import { LlmModule } from './llm/llm.module';
 import { NotebooksModule } from './notebooks/notebooks.module';
 import { QueueModule } from './queue/queue.module';
+import { RetrievalModule } from './retrieval/retrieval.module';
 import { SourcesModule } from './sources/sources.module';
 import { StorageModule } from './storage/storage.module';
 
@@ -33,9 +35,11 @@ const THROTTLE_LIMIT = 120;
 // the worker downloads, processes jobs and embeds. None of them has a controller.
 // Limits load everywhere too: the API checks them, the worker runs their daily
 // usage cleanup job.
+// Chat and retrieval are HTTP-only: the chat endpoint is the only consumer of
+// the vector search, and the worker needs neither.
 export const RUN_MODE_MODULES: RunModeModules = {
   always: [DbModule, AuthModule, HealthModule, StorageModule, QueueModule, LlmModule, LimitsModule],
-  http: [NotebooksModule, SourcesModule],
+  http: [NotebooksModule, SourcesModule, RetrievalModule, ChatModule],
   worker: [IngestionModule],
 };
 
