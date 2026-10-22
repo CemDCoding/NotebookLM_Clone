@@ -59,7 +59,14 @@ export interface ApiFetch {
   (path: string, options?: ApiRequestOptions): Promise<void>;
 }
 
-export function createApiFetch(deps: ApiClientDeps): ApiFetch {
+/** Sends a request and returns the raw response, e.g. to read a stream. */
+export type ApiFetchResponse = (path: string, options?: ApiRequestOptions) => Promise<Response>;
+
+/**
+ * Shares token handling, the 401 renewal and the error format with `apiFetch`, but hands the
+ * successful response over unread. Failures before the body is read throw an `ApiError`.
+ */
+export function createApiFetchResponse(deps: ApiClientDeps): ApiFetchResponse {
   async function send(url: string, options: ApiRequestOptions, token: string): Promise<Response> {
     const headers = new Headers({ Authorization: `Bearer ${token}` });
     let body: BodyInit | undefined;
@@ -95,12 +102,7 @@ export function createApiFetch(deps: ApiClientDeps): ApiFetch {
     throw new ApiError(401, SESSION_EXPIRED_MESSAGE);
   }
 
-  function apiFetch<T>(path: string, options: ApiFetchOptions<T>): Promise<T>;
-  function apiFetch(path: string, options?: ApiRequestOptions): Promise<void>;
-  async function apiFetch<T>(
-    path: string,
-    options: ApiRequestOptions & { schema?: ZodType<T> } = {},
-  ): Promise<T | void> {
+  return async function apiFetchResponse(path, options = {}) {
     if (!deps.baseUrl) {
       throw new Error('NEXT_PUBLIC_API_URL must be set');
     }
@@ -127,6 +129,20 @@ export function createApiFetch(deps: ApiClientDeps): ApiFetch {
     if (!response.ok) {
       throw await toApiError(response);
     }
+    return response;
+  };
+}
+
+export function createApiFetch(deps: ApiClientDeps): ApiFetch {
+  const apiFetchResponse = createApiFetchResponse(deps);
+
+  function apiFetch<T>(path: string, options: ApiFetchOptions<T>): Promise<T>;
+  function apiFetch(path: string, options?: ApiRequestOptions): Promise<void>;
+  async function apiFetch<T>(
+    path: string,
+    options: ApiRequestOptions & { schema?: ZodType<T> } = {},
+  ): Promise<T | void> {
+    const response = await apiFetchResponse(path, options);
     if (!options.schema) {
       return;
     }
@@ -178,12 +194,17 @@ const supabaseSession: SessionTokens = {
   },
 };
 
-/** Calls the NestJS API from the browser with the access token of the current session. */
-export const apiFetch = createApiFetch({
+const browserDeps: ApiClientDeps = {
   baseUrl: process.env.NEXT_PUBLIC_API_URL,
   session: supabaseSession,
   // Wrapped so `fetch` is not called with `deps` as `this`, which browsers reject.
   fetch: (url, init) => fetch(url, init),
   // A full page load also drops all cached data of the previous session.
   redirectToLogin: () => window.location.assign(LOGIN_PATH),
-});
+};
+
+/** Calls the NestJS API from the browser with the access token of the current session. */
+export const apiFetch = createApiFetch(browserDeps);
+
+/** Like `apiFetch`, but returns the unread response, e.g. for the chat stream. */
+export const apiFetchResponse = createApiFetchResponse(browserDeps);
