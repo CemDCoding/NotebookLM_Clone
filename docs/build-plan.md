@@ -73,8 +73,8 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M3-API-02 | Textextraktion und Chunking | M3 | API | W2 | M3-API-01 | M | fertig |
 | M3-API-03 | Embedding-Provider | M3 | API | W2 | M3-API-01 | M | fertig |
 | M3-API-04 | pg-boss-Queue, Einreihen, Aufräum-Job | M3 | API | W2 | M3-API-01 | M | fertig |
-| M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | offen |
-| M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | offen |
+| M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | in Arbeit |
+| M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | in Arbeit |
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
 | M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | offen |
 | M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | offen |
@@ -1243,7 +1243,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „sources und ingestion“` (ganzer Ablauf), „Logging“; `CLAUDE.md §7 „DSGVO“`; PE-14
 - **Abhängigkeiten:** M3-API-02, M3-API-03, M3-API-04
 - **Parallel möglich mit:** M3-API-06
-- **Dateien (Eigentum):** `apps/api/src/ingestion/**` außer `extraction/` und `chunking/`
+- **Dateien (Eigentum):** `apps/api/src/ingestion/**` außer `extraction/` und `chunking/`, `apps/api/test/support/**` (die gemeinsame Test-App startet das AppModule im Modus `all` und lädt damit den Worker, `FakeQueue` braucht deshalb `work`)
 - **Nicht anfassen:** `apps/api/src/queue/**`, `apps/api/src/llm/**`
 - **Umsetzung:**
   1. Handler: Quelle laden (mit `userId` aus dem Payload) und auf `processing` setzen. Datei aus Storage laden, `extractPages`, `chunkPages`, `embed`.
@@ -1269,7 +1269,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Dateien (Eigentum):** `apps/api/src/db/seed.ts`, `apps/api/src/db/seed/**`
 - **Nicht anfassen:** `apps/api/src/ingestion/**`
 - **Umsetzung:**
-  1. Der Seed läuft als Nest-Application-Context ohne HTTP und ohne Worker. Er nutzt `StorageService` und `QueueService`.
+  1. Der Seed läuft als Nest-Application-Context ohne HTTP und ohne Worker: eigenes Seed-Modul unter `seed/` mit `AppConfigModule` (`RUN_MODE` fest `api`), `DbModule`, `StorageModule` und `QueueModule`, kein `IngestionModule`. Er nutzt `StorageService` und `QueueService`. Weil `AppConfigModule` die vollständige Konfiguration braucht, prüft der Seed das ganze API-Env-Schema plus `DEMO_USER_*` (`apps/api/CLAUDE.md` „seed“). Der Seed läuft unter `tsx`, das keine Decorator-Metadaten erzeugt: Jeder Provider im Seed-Modul nennt seine Abhängigkeiten per `@Inject` oder `inject`.
   2. Vor dem Löschen der Notebooks werden alle Storage-Dateien des Demo-Nutzers entfernt.
   3. Beispielquelle: selbst verfasster deutscher Markdown-Text (`seed/demo-source.md`, ca. 3–5 Seiten). Er erklärt z. B. das Projekt, RAG und Zitate, enthält einen eindeutigen Fakt für die Demo-Frage und keine fremden urheberrechtlich geschützten Inhalte.
   4. Ablauf: in Storage hochladen, Quelle `pending` anlegen, einreihen.
