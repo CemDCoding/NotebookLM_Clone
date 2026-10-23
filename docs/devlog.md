@@ -231,3 +231,32 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - Sobald Railway Hobby-Builds freigibt: M1-DEP-01, danach M2-DEP-01 (gezielt bis `2062c5b`), erst dann M3-DEP-01. Jeder Meilenstein bekommt seinen eigenen Smoke-Test.
 - Der Seed auf `dev` setzt die Tabellen `sources` und `chunks` voraus und legt ein pg-boss-Schema an. Der Prod-Seed läuft deshalb immer aus dem Code, der gerade auf `master` deployt ist, in einem temporären Worktree von `master`, nie aus dem Hauptcheckout auf `dev`.
 - Die Testdateien für den Smoke-Test von M3 (dreiseitige Text-PDF, PDF ohne Text, Markdown) liegen außerhalb des Repositorys und bleiben bis M3-DEP-01 aufbewahrt.
+
+## 2026-10-23 – Deployment M1 bis M4
+
+**Meilenstein:** M1 bis M4 live, gemeinsam deployt (`cb5f778`). M1-DEP-01 bis M4-DEP-01 fertig
+
+**Vorgehen**
+- Railway gibt Hobby-Builds wieder frei. Statt M1 bis M3 wie geplant einzeln nachzuholen, ging `dev` in einem Schritt nach `master`. Gründe: wenig Zeit, jeder Meilenstein war auf `dev` am Integrationspunkt gegen die echte dev-Datenbank geprüft, und die Zwischenstände wären nur Minuten live gewesen. Kein Punkt der Smoke-Tests entfiel. Alle Punkte aus M1-DEP-01 bis M4-DEP-01 liefen in einem Durchgang. Nur „Status bleibt wartet“ (M2) ist mit laufendem Worker nicht mehr beobachtbar. Geprüft wurde stattdessen, dass neue Quellen zuerst mit „wartet“ erscheinen.
+- Vorher bei Mistral ein monatliches Ausgabelimit gesetzt. Die offizielle Preisseite nennt für die genutzten Modelle keine Zahlen mehr. Nach Angaben von Drittanbietern bleibt die Demo selbst beim vollen globalen Tageslimit unter 1 $ pro Tag.
+
+**Vorbedingungen belegt, bevor der Smoke-Test zählte**
+- Railway und Vercel zeigen beide `cb5f778`. Im Build-Log steht Node 24.
+- `GET /health` → `200` mit `database: up`. `/notebooks` und `/models` antworten ohne bzw. mit ungültigem Token mit `401`, vorher kam vom M0-Code `404`.
+- Lesende Prüfung der Prod-Datenbank in einer `READ ONLY`-Transaktion, nur Anzahlen: 9 Migrationen, alle fünf Tabellen mit RLS und ohne Policies, Schema `pgboss` vorhanden, Bucket `sources` privat, 0 Nutzer vor dem Seed.
+- Prod-Seed aus einem temporären Worktree auf `cb5f778`. Vorher die Projekt-Ref von `.env.production` geprüft, ohne Werte auszugeben: `SUPABASE_URL` und `DATABASE_URL` gehören zum selben Projekt, es ist ein anderes als in der dev-`.env` und dasselbe wie im ausgelieferten Web-Bundle.
+- Prod hat einen eigenen Demo-Account mit anderen Zugangsdaten als dev. Dafür war keine Codeänderung nötig, weil `db:seed:prod` nur `.env.production` liest.
+
+**Smoke-Test**
+- M1: Ohne Login Umleitung auf `/login`. Die Login-Seite hat keine Registrierung und kein „Passwort vergessen“. Kein `404` beim Prefetch. Notebooks lassen sich anlegen, umbenennen und löschen. Die Supabase-REST-API mit dem publishable Key liefert 0 Zeilen, obwohl Zeilen vorhanden sind. Eine Registrierung wird abgelehnt. Helmet-Header sind gesetzt, CORS erlaubt nur die eigene Domain.
+- M2: PDF, TXT, MD und eingefügter Text funktionieren. Eine binäre Datei mit `.txt`-Endung wird abgelehnt. Eine Datei über 10 MB weist der Browser ab, per curl kommt `413`. Die Aktivierung bleibt nach einem Reload erhalten. Nach dem Löschen von Quelle und Notebook liegt nur noch die Datei der Beispielquelle im Storage. `usage_events` (`upload`) bleibt bei 5 → 5.
+- M3: Eine PDF wechselt live ohne Reload auf „bereit“, eine PDF ohne Text wird „fehlgeschlagen“, Markdown wird „bereit“. 3 Chunks mit Seite, 0 mit falscher `notebook_id` oder `user_id`, keine „bereit“-Quelle ohne Chunks. Die Logs enthalten nur IDs, Status und Dauer.
+- M4: Die Antwort streamt auf Deutsch mit Zitaten. Popover und Seitenpanel funktionieren. Fragen ohne Bezug zu den Quellen werden ehrlich beantwortet. Eine Prompt-Injection in einer Quelle bleibt wirkungslos. Stopp markiert die Antwort als „Abgebrochen“, ohne Eintrag im Verlauf. Der Picker zeigt nur Mistral-Modelle. Gelöschte Quellen erscheinen als „Quelle gelöscht“. Verlauf löschen funktioniert. Ohne aktive Quelle kommt `409`.
+
+**Probleme und Erkenntnisse**
+- Der erste Prod-Seed brach ab, weil `WEB_ORIGIN` und `MISTRAL_API_KEY` fehlten. Seit M3 prüft der Seed das ganze Env-Schema der API, die `.env.production` stammte aber noch aus M1. Der Abbruch kam vor jedem Datenbankzugriff. `docs/deployment.md` ist ergänzt.
+- Nicht belegt: ob pg-boss nach `SIGTERM` sauber stoppt. Der Stopp ist implementiert (`beforeApplicationShutdown`, `enableShutdownHooks`), loggt aber nichts. Offen ist außerdem, ob das Signal durch die pnpm-Startkette bis zum Node-Prozess durchkommt. Bewusst nicht jetzt behoben, sondern in M5-API-01 aufgenommen. Folge im schlimmsten Fall: Ein laufender Job bricht beim Redeploy ab, und pg-boss wiederholt ihn.
+- KI-Fehler: Ein Prüfskript von Claude meldete eine „verwaiste Datei“ im Storage. Eingefügter Text hat aber eine Datei, während `storage_path` laut §4 leer bleibt, und das Skript verglich mit `storage_path` statt mit dem Pfadschema. Die Zahlen erklären das eindeutig (6 Dateien = 5 Datei-Quellen + 1 eingefügter Text). Ein Fehler der App war es nicht.
+
+**Nächster Schritt**
+- M5, Welle 1.

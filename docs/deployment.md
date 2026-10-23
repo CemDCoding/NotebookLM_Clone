@@ -163,7 +163,7 @@ Jeder Meilenstein endet mit einem Deployment:
 
 - [ ] Monatliches Ausgabelimit in der Mistral-Konsole gesetzt.
 - [ ] Registrierung in `notebooklm-prod` deaktiviert.
-- [ ] `pnpm --filter @notebooklm/api db:seed:prod` ausgeführt, Demo-Login funktioniert. Das Skript liest `apps/api/.env.production`, die nur lokal liegt und durch `.gitignore` ausgeschlossen ist.
+- [ ] `pnpm --filter @notebooklm/api db:seed:prod` ausgeführt, Demo-Login funktioniert. Das Skript liest `apps/api/.env.production`, die nur lokal liegt und durch `.gitignore` ausgeschlossen ist. Seit M3 startet der Seed einen Nest-Context und prüft das ganze Env-Schema der API: Neben den Seed-Variablen braucht die Datei auch `WEB_ORIGIN` und `MISTRAL_API_KEY` (gleiche Werte wie in Railway). Die Demo-Zugangsdaten in prod sind andere als in dev.
 - [ ] Hauptfluss live durchgespielt: Login, Notebook, Upload, Verarbeitung, Frage, Zitat, Export.
 - [ ] Keine Secrets im Repository (`.env`-Dateien ignoriert, Historie geprüft).
 - [ ] Keine Demo-Zugangsdaten im Repository oder auf der Live-Seite.

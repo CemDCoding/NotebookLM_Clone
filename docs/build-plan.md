@@ -59,7 +59,7 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M1-API-03 | Notebooks-Modul, Bestandslimit und Ownership | M1 | API | W2 | M1-API-01, M1-SH-01 | L | fertig |
 | M1-API-04 | Seed-Skript Demo-Account | M1 | API | W2 | M1-API-01 | M | fertig |
 | M1-WEB-02 | Notebook-Übersicht | M1 | WEB | W2 | M1-WEB-01, M1-SH-01 | L | fertig |
-| M1-DEP-01 | Deployment M1 | M1 | HUM | W3 | alle M1, H-09 | H | offen |
+| M1-DEP-01 | Deployment M1 | M1 | HUM | W3 | alle M1, H-09 | H | fertig |
 | M2-SH-01 | Quellen-Verträge | M2 | SH | W1 | M1-DEP-01 | M | fertig |
 | M2-API-01 | Gerüst M2: Schema `sources`/`usage_events`, Modul-Stubs | M2 | API | W1 | M1-DEP-01 | M | fertig |
 | M2-API-02 | Storage-Service und Dateityp-Prüfung | M2 | API | W2 | M2-API-01 | M | fertig |
@@ -67,7 +67,7 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M2-WEB-01 | Notebook-Ansicht und Quellenliste | M2 | WEB | W2 | M2-SH-01 | L | fertig |
 | M2-API-04 | Sources-Modul | M2 | API | W3 | M2-API-02, M2-API-03, M2-SH-01 | L | fertig |
 | M2-WEB-02 | Quellen hinzufügen | M2 | WEB | W3 | M2-WEB-01 | M | fertig |
-| M2-DEP-01 | Deployment M2 | M2 | HUM | W4 | alle M2 | H | offen |
+| M2-DEP-01 | Deployment M2 | M2 | HUM | W4 | alle M2 | H | fertig |
 | M3-API-01 | Gerüst M3: Schema `chunks`, Queue/LLM/Ingestion-Stubs | M3 | API | W1 | M2-DEP-01 | M | fertig |
 | M3-WEB-01 | Status-Polling und Fehleranzeige | M3 | WEB | W1 | M2-DEP-01 | S | fertig |
 | M3-API-02 | Textextraktion und Chunking | M3 | API | W2 | M3-API-01 | M | fertig |
@@ -75,7 +75,7 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M3-API-04 | pg-boss-Queue, Einreihen, Aufräum-Job | M3 | API | W2 | M3-API-01 | M | fertig |
 | M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | fertig |
 | M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | fertig |
-| M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
+| M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | fertig |
 | M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | fertig |
 | M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | fertig |
 | M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | fertig |
@@ -86,7 +86,7 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M4-WEB-02 | Antwort-Rendering und Zitate | M4 | WEB | W2 | M4-SH-01 | L | fertig |
 | M4-API-06 | Chat-Service, SSE-Endpunkt und Verlauf | M4 | API | W3 | M4-API-02 bis M4-API-05 | L | fertig |
 | M4-WEB-03 | Chat-Panel | M4 | WEB | W3 | M4-WEB-01, M4-WEB-02 | L | fertig |
-| M4-DEP-01 | Deployment M4 | M4 | HUM | W4 | alle M4, H-10 (optional) | H | offen |
+| M4-DEP-01 | Deployment M4 | M4 | HUM | W4 | alle M4, H-10 (optional) | H | fertig |
 | M5-SH-01 | Export-Vertrag | M5 | SH | W1 | M4-DEP-01 | S | offen |
 | M5-API-01 | Sicherheits- und Limit-Audit | M5 | API | W1 | M4-DEP-01 | M | offen |
 | M5-WEB-01 | Zustände und Design-Politur | M5 | WEB | W1 | M4-DEP-01 | L | offen |
@@ -110,9 +110,11 @@ Die Deployments werden **einzeln und in dieser Reihenfolge** nachgeholt. Jedes b
 
 | Paket | Stand, der nach `master` geht | Status |
 |---|---|---|
-| M1-DEP-01 | `09d6934` (liegt schon auf `master`) | offen |
-| M2-DEP-01 | `2062c5b` (M2 ohne M3), gezielt statt ganz `dev` | offen |
-| M3-DEP-01 | `55d35a0` (M3 ohne M4), gezielt statt ganz `dev` | offen |
+| M1-DEP-01 | `09d6934` (liegt schon auf `master`) | fertig (gemeinsam mit M4, `cb5f778`) |
+| M2-DEP-01 | `2062c5b` (M2 ohne M3), gezielt statt ganz `dev` | fertig (gemeinsam mit M4, `cb5f778`) |
+| M3-DEP-01 | `55d35a0` (M3 ohne M4), gezielt statt ganz `dev` | fertig (gemeinsam mit M4, `cb5f778`) |
+
+Am 2026-10-23 abweichend gemeinsam deployt: `dev` ging in einem Schritt nach `master` (`cb5f778`). Den vollständigen Smoke-Test aller vier Pakete gab es in einem Durchgang. Begründung im Devlog vom 2026-10-23.
 
 - **M4-DEP-01 beginnt erst, wenn M1-DEP-01 bis M3-DEP-01 auf `fertig` stehen.**
 - Braucht ein Meilenstein nach seinem Smoke-Test einen Fix, entsteht er auf einem Branch von `master`, geht nach `master` und danach `master` nach `dev`.
@@ -1567,6 +1569,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
   2. Prüfen, dass jede Repository-Methode `userId` filtert, dass in Logs keine Inhalte stehen, dass `413` und `429` korrekt ankommen und dass der Throttler aktiv ist.
   3. Fehlende Tests ergänzen. Gefundene Lücken beheben, wenn sie klein sind, sonst melden.
   4. `docs/security-checklist.md` mit der Live-Checkliste für den Smoke-Test anlegen.
+  5. Den Stopp von pg-boss beim Herunterfahren loggen und belegen, dass `SIGTERM` durch die pnpm-Startkette auf Railway den Node-Prozess erreicht (Devlog 2026-10-23). Falls nicht, den Start so ändern, dass das Signal ankommt.
 - **Schnittstellen:** keine neuen
 - **Akzeptanzkriterien:** Für jede §7-Regel steht in der Checkliste ein Nachweis (Datei oder Test) oder ein dokumentierter offener Punkt.
 - **Tests:** ergänzte Tests je nach Befund
