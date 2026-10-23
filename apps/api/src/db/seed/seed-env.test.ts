@@ -2,18 +2,28 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EnvValidationError } from '../../config/env.schema';
+import { EnvValidationError, validateEnv } from '../../config/env.schema';
 import { detectEnvSource, loadSeedEnv, validateSeedEnv } from './seed-env';
 
-const PROD = {
+const PROD_API = {
+  WEB_ORIGIN: 'https://app.example.com',
   DATABASE_URL: 'postgresql://postgres.prodref:prod-db-secret@pooler.example.com:5432/postgres',
   SUPABASE_URL: 'https://prodref.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: 'prod-service-role-secret',
+  MISTRAL_API_KEY: 'prod-mistral-secret',
+};
+
+const PROD = {
+  ...PROD_API,
   DEMO_USER_EMAIL: 'demo@example.test',
   DEMO_USER_PASSWORD: 'prod-demo-secret',
 };
 
+const PROD_DEMO = { email: PROD.DEMO_USER_EMAIL, password: PROD.DEMO_USER_PASSWORD };
+
 const DEV_DOTENV = [
+  'WEB_ORIGIN=http://localhost:3000',
+  'MISTRAL_API_KEY=dev-mistral-secret',
   'DATABASE_URL=postgresql://postgres.devref:dev-db-secret@pooler.example.com:5432/postgres',
   'SUPABASE_URL=https://devref.supabase.co',
   'SUPABASE_SERVICE_ROLE_KEY=dev-service-role-secret',
@@ -72,8 +82,8 @@ describe('loadSeedEnv', () => {
     });
 
     expect(source).toBe('dotenv');
-    expect(seedEnv.SUPABASE_URL).toBe('https://devref.supabase.co');
-    expect(seedEnv.DEMO_USER_PASSWORD).toBe('from-the-shell');
+    expect(seedEnv.app.SUPABASE_URL).toBe('https://devref.supabase.co');
+    expect(seedEnv.demo.password).toBe('from-the-shell');
   });
 
   it('never reads apps/api/.env when started with --env-file', () => {
@@ -89,7 +99,8 @@ describe('loadSeedEnv', () => {
 
     expect(source).toBe('env-file');
     expect(loadEnvFile).not.toHaveBeenCalled();
-    expect(seedEnv).toEqual(PROD);
+    expect(seedEnv.app).toMatchObject(PROD_API);
+    expect(seedEnv.demo).toEqual(PROD_DEMO);
   });
 
   it('aborts when the env file lacks a variable, instead of taking it from development', () => {
@@ -117,14 +128,35 @@ describe('loadSeedEnv', () => {
     const { env } = loadSeedEnv({ execArgv: [], env: { ...PROD }, dotenvPath, loadEnvFile });
 
     expect(loadEnvFile).not.toHaveBeenCalled();
-    expect(env).toEqual(PROD);
+    expect(env.demo).toEqual(PROD_DEMO);
   });
 });
 
 describe('validateSeedEnv', () => {
-  it('does not require the API-only variables such as MISTRAL_API_KEY', () => {
-    expect(validateSeedEnv(PROD)).toEqual(PROD);
+  it('validates the whole API schema, because the seed starts AppConfigModule', () => {
+    expect(() => validateSeedEnv({ ...PROD, MISTRAL_API_KEY: undefined })).toThrow(
+      /MISTRAL_API_KEY: is required but not set/,
+    );
+    expect(() => validateSeedEnv({ ...PROD, WEB_ORIGIN: undefined })).toThrow(
+      /WEB_ORIGIN: is required but not set/,
+    );
   });
+
+  it('applies the API defaults and keeps the demo credentials out of the app config', () => {
+    const { app, demo } = validateSeedEnv(PROD);
+
+    expect(app).toEqual(validateEnv({ ...PROD_API, RUN_MODE: 'api' }));
+    expect(app).not.toHaveProperty('DEMO_USER_EMAIL');
+    expect(app).not.toHaveProperty('DEMO_USER_PASSWORD');
+    expect(demo).toEqual(PROD_DEMO);
+  });
+
+  it.each(['all', 'worker', 'not-a-mode'])(
+    'always runs as RUN_MODE api, even with RUN_MODE=%s set',
+    (mode) => {
+      expect(validateSeedEnv({ ...PROD, RUN_MODE: mode }).app.RUN_MODE).toBe('api');
+    },
+  );
 
   it('treats empty values as missing', () => {
     expect(() => validateSeedEnv({ ...PROD, DEMO_USER_EMAIL: '  ' })).toThrow(

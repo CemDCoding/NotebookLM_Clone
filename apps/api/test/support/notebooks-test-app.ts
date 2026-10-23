@@ -1,16 +1,25 @@
 import { Global, type INestApplication, Module } from '@nestjs/common';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import { DEFAULT_LIMITS } from '@notebooklm/shared';
+import { DEFAULT_LIMITS, type Limits } from '@notebooklm/shared';
 import type { NextFunction, Request, Response } from 'express';
 import { AllExceptionsFilter } from '../../src/common/filters';
 import { ZodValidationPipe } from '../../src/common/pipes/zod-validation.pipe';
 import type { AuthenticatedRequest } from '../../src/common/types';
 import { AppConfigService } from '../../src/config';
+import { LimitTransactions } from '../../src/limits/limit-transactions';
 import { LimitsRepository } from '../../src/limits/limits.repository';
+import { SourceCountsRepository } from '../../src/limits/source-counts.repository';
+import { UsageCleanupJob } from '../../src/limits/usage-cleanup.job';
+import { UsageEventsRepository } from '../../src/limits/usage-events.repository';
 import { NotebooksModule } from '../../src/notebooks/notebooks.module';
 import { NotebooksRepository } from '../../src/notebooks/notebooks.repository';
+import { PG_BOSS, QueueService } from '../../src/queue/queue.service';
+import { SourcesRepository } from '../../src/sources/sources.repository';
+import { STORAGE_CLIENT, StorageService } from '../../src/storage/storage.service';
+import { FakeQueue } from './fake-queue';
 import { InMemoryNotebooks } from './in-memory-notebooks';
+import { FakeStorage, InMemorySources, uploadLimitTables } from './in-memory-sources';
 
 /**
  * Header carrying the user ID in tests. It stands in for the auth guard, which
@@ -22,18 +31,36 @@ export const TEST_USER_HEADER = 'x-test-user';
 export interface NotebooksTestApp {
   app: INestApplication;
   store: InMemoryNotebooks;
+  sources: InMemorySources;
+  storage: FakeStorage;
+  queue: FakeQueue;
+  /** Number of `upload` usage events written so far. */
+  uploadEvents: () => number;
 }
 
 /**
- * The real `NotebooksModule` with the global pipe and filter of `AppModule`,
- * backed by an in-memory store instead of the database.
+ * The real `NotebooksModule`, and with it the `SourcesModule`, with the
+ * global pipe and filter of `AppModule`, backed by in-memory stores instead
+ * of the database, the storage bucket and pg-boss. Sources see the notebooks of the
+ * notebook store, as they would through the database.
  */
 export async function createNotebooksTestApp(
-  maxNotebooksPerUser: number = DEFAULT_LIMITS.maxNotebooksPerUser,
+  limits: Partial<Limits> = {},
 ): Promise<NotebooksTestApp> {
   const store = new InMemoryNotebooks();
+  const sources = new InMemorySources(
+    [],
+    async (userId, notebookId) => (await store.findById(userId, notebookId)) !== undefined,
+  );
+  const storage = new FakeStorage();
+  const queue = new FakeQueue();
+  const tables = uploadLimitTables(sources);
+  // Unset overrides keep their default instead of becoming `undefined`.
+  const overrides = Object.fromEntries(
+    Object.entries(limits).filter(([, value]) => value !== undefined),
+  );
   const config: Pick<AppConfigService, 'limits'> = {
-    limits: { ...DEFAULT_LIMITS, maxNotebooksPerUser },
+    limits: { ...DEFAULT_LIMITS, ...overrides },
   };
 
   // Global like `AppConfigModule` in the real app, so `LimitsModule` can inject it.
@@ -55,12 +82,33 @@ export async function createNotebooksTestApp(
     .useValue(store)
     .overrideProvider(LimitsRepository)
     .useValue(store)
+    .overrideProvider(LimitTransactions)
+    .useValue(tables.transactions)
+    .overrideProvider(SourceCountsRepository)
+    .useValue(tables.sourceCounts)
+    .overrideProvider(UsageEventsRepository)
+    .useValue(tables.usageEvents)
+    .overrideProvider(SourcesRepository)
+    .useValue(sources)
+    .overrideProvider(StorageService)
+    .useValue(storage)
+    // The real client would need the Supabase URL and key; the fake storage replaces its only user.
+    .overrideProvider(STORAGE_CLIENT)
+    .useValue({})
+    .overrideProvider(QueueService)
+    .useValue(queue)
+    // pg-boss would need a database; the fake queue replaces its only user.
+    .overrideProvider(PG_BOSS)
+    .useValue({})
+    // The cleanup job is a worker concern and would need the database.
+    .overrideProvider(UsageCleanupJob)
+    .useValue({})
     .compile();
 
   const app = moduleRef.createNestApplication({ logger: false });
   app.use(fakeAuth);
   await app.init();
-  return { app, store };
+  return { app, store, sources, storage, queue, uploadEvents: tables.uploadEvents };
 }
 
 function fakeAuth(req: Request, _res: Response, next: NextFunction): void {

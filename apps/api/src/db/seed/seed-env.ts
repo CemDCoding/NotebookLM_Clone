@@ -1,23 +1,25 @@
 import { existsSync } from 'node:fs';
 import { z } from 'zod';
 // Imported from the file, not the `config` barrel, which would pull in Nest decorators.
-import { EnvSchema, EnvValidationError } from '../../config/env.schema';
+import { type Env, EnvSchema, EnvValidationError } from '../../config/env.schema';
+import type { DemoCredentials } from './demo-seed';
 
 /**
- * Only what the seed needs. The API's own variables such as `MISTRAL_API_KEY`
- * are not required, and the `DEMO_USER_*` variables never reach the API schema.
+ * The API's whole schema plus the demo credentials: the seed starts
+ * `AppConfigModule`, which needs the complete configuration (apps/api/CLAUDE.md
+ * "seed"). `RUN_MODE` is left out because the seed always runs as `api`.
  */
-export const SeedEnvSchema = EnvSchema.pick({
-  DATABASE_URL: true,
-  SUPABASE_URL: true,
-  SUPABASE_SERVICE_ROLE_KEY: true,
-}).extend({
+export const SeedEnvSchema = EnvSchema.omit({ RUN_MODE: true }).extend({
   DEMO_USER_EMAIL: z.email(),
   // Supabase Auth rejects passwords shorter than 6 characters by default.
   DEMO_USER_PASSWORD: z.string().min(6),
 });
 
-export type SeedEnv = z.infer<typeof SeedEnvSchema>;
+export interface SeedEnv {
+  /** Configuration for the seed's Nest context; never contains the demo credentials. */
+  app: Env;
+  demo: DemoCredentials;
+}
 
 /**
  * Where the variables come from. `env-file`: the script was started with
@@ -64,6 +66,7 @@ export function loadSeedEnv(options: LoadSeedEnvOptions): LoadedSeedEnv {
 
 export function validateSeedEnv(raw: Record<string, string | undefined>): SeedEnv {
   // Same rule as the API (`validateEnv`): `KEY=` in a dotenv file counts as unset.
+  // Only the schema's keys are taken, so a `RUN_MODE` in the file is ignored.
   const present = Object.fromEntries(
     Object.keys(SeedEnvSchema.shape)
       .map((key) => [key, raw[key]] as const)
@@ -77,5 +80,12 @@ export function validateSeedEnv(raw: Record<string, string | undefined>): SeedEn
   if (!result.success) {
     throw new EnvValidationError(result.error.issues);
   }
-  return result.data;
+
+  const { DEMO_USER_EMAIL, DEMO_USER_PASSWORD, ...app } = result.data;
+  return {
+    // `api` starts pg-boss for enqueueing but registers no workers or
+    // schedules, so the seed never processes jobs and can stop right away.
+    app: { ...app, RUN_MODE: 'api' },
+    demo: { email: DEMO_USER_EMAIL, password: DEMO_USER_PASSWORD },
+  };
 }

@@ -60,32 +60,32 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M1-API-04 | Seed-Skript Demo-Account | M1 | API | W2 | M1-API-01 | M | fertig |
 | M1-WEB-02 | Notebook-Übersicht | M1 | WEB | W2 | M1-WEB-01, M1-SH-01 | L | fertig |
 | M1-DEP-01 | Deployment M1 | M1 | HUM | W3 | alle M1, H-09 | H | offen |
-| M2-SH-01 | Quellen-Verträge | M2 | SH | W1 | M1-DEP-01 | M | offen |
-| M2-API-01 | Gerüst M2: Schema `sources`/`usage_events`, Modul-Stubs | M2 | API | W1 | M1-DEP-01 | M | offen |
-| M2-API-02 | Storage-Service und Dateityp-Prüfung | M2 | API | W2 | M2-API-01 | M | offen |
-| M2-API-03 | Nutzungslimits mit `usage_events` | M2 | API | W2 | M2-API-01 | M | offen |
-| M2-WEB-01 | Notebook-Ansicht und Quellenliste | M2 | WEB | W2 | M2-SH-01 | L | offen |
-| M2-API-04 | Sources-Modul | M2 | API | W3 | M2-API-02, M2-API-03, M2-SH-01 | L | offen |
-| M2-WEB-02 | Quellen hinzufügen | M2 | WEB | W3 | M2-WEB-01 | M | offen |
+| M2-SH-01 | Quellen-Verträge | M2 | SH | W1 | M1-DEP-01 | M | fertig |
+| M2-API-01 | Gerüst M2: Schema `sources`/`usage_events`, Modul-Stubs | M2 | API | W1 | M1-DEP-01 | M | fertig |
+| M2-API-02 | Storage-Service und Dateityp-Prüfung | M2 | API | W2 | M2-API-01 | M | fertig |
+| M2-API-03 | Nutzungslimits mit `usage_events` | M2 | API | W2 | M2-API-01 | M | fertig |
+| M2-WEB-01 | Notebook-Ansicht und Quellenliste | M2 | WEB | W2 | M2-SH-01 | L | fertig |
+| M2-API-04 | Sources-Modul | M2 | API | W3 | M2-API-02, M2-API-03, M2-SH-01 | L | fertig |
+| M2-WEB-02 | Quellen hinzufügen | M2 | WEB | W3 | M2-WEB-01 | M | fertig |
 | M2-DEP-01 | Deployment M2 | M2 | HUM | W4 | alle M2 | H | offen |
-| M3-API-01 | Gerüst M3: Schema `chunks`, Queue/LLM/Ingestion-Stubs | M3 | API | W1 | M2-DEP-01 | M | offen |
-| M3-WEB-01 | Status-Polling und Fehleranzeige | M3 | WEB | W1 | M2-DEP-01 | S | offen |
-| M3-API-02 | Textextraktion und Chunking | M3 | API | W2 | M3-API-01 | M | offen |
-| M3-API-03 | Embedding-Provider | M3 | API | W2 | M3-API-01 | M | offen |
-| M3-API-04 | pg-boss-Queue, Einreihen, Aufräum-Job | M3 | API | W2 | M3-API-01 | M | offen |
-| M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | offen |
-| M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | offen |
+| M3-API-01 | Gerüst M3: Schema `chunks`, Queue/LLM/Ingestion-Stubs | M3 | API | W1 | M2-DEP-01 | M | fertig |
+| M3-WEB-01 | Status-Polling und Fehleranzeige | M3 | WEB | W1 | M2-DEP-01 | S | fertig |
+| M3-API-02 | Textextraktion und Chunking | M3 | API | W2 | M3-API-01 | M | fertig |
+| M3-API-03 | Embedding-Provider | M3 | API | W2 | M3-API-01 | M | fertig |
+| M3-API-04 | pg-boss-Queue, Einreihen, Aufräum-Job | M3 | API | W2 | M3-API-01 | M | fertig |
+| M3-API-05 | Ingestion-Worker | M3 | API | W3 | M3-API-02, M3-API-03, M3-API-04 | L | fertig |
+| M3-API-06 | Seed mit Beispielquelle | M3 | API | W3 | M3-API-04 | S | fertig |
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
-| M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | offen |
-| M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | offen |
-| M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
-| M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | offen |
-| M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | offen |
-| M4-API-05 | Chat-Limits | M4 | API | W2 | M4-API-01 | S | offen |
-| M4-WEB-01 | SSE-Client und Stream-Hook | M4 | WEB | W2 | M4-SH-01 | M | offen |
-| M4-WEB-02 | Antwort-Rendering und Zitate | M4 | WEB | W2 | M4-SH-01 | L | offen |
-| M4-API-06 | Chat-Service, SSE-Endpunkt und Verlauf | M4 | API | W3 | M4-API-02 bis M4-API-05 | L | offen |
-| M4-WEB-03 | Chat-Panel | M4 | WEB | W3 | M4-WEB-01, M4-WEB-02 | L | offen |
+| M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | fertig |
+| M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | fertig |
+| M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | fertig |
+| M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | fertig |
+| M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | fertig |
+| M4-API-05 | Chat-Limits | M4 | API | W2 | M4-API-01 | S | fertig |
+| M4-WEB-01 | SSE-Client und Stream-Hook | M4 | WEB | W2 | M4-SH-01 | M | fertig |
+| M4-WEB-02 | Antwort-Rendering und Zitate | M4 | WEB | W2 | M4-SH-01 | L | fertig |
+| M4-API-06 | Chat-Service, SSE-Endpunkt und Verlauf | M4 | API | W3 | M4-API-02 bis M4-API-05 | L | fertig |
+| M4-WEB-03 | Chat-Panel | M4 | WEB | W3 | M4-WEB-01, M4-WEB-02 | L | fertig |
 | M4-DEP-01 | Deployment M4 | M4 | HUM | W4 | alle M4, H-10 (optional) | H | offen |
 | M5-SH-01 | Export-Vertrag | M5 | SH | W1 | M4-DEP-01 | S | offen |
 | M5-API-01 | Sicherheits- und Limit-Audit | M5 | API | W1 | M4-DEP-01 | M | offen |
@@ -101,6 +101,22 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M7-OPS-01 | ADR 0005 Spracheingabe (optional) | M7 | OPS | W1 | M6-DEP-01 | S | offen |
 | M7-WEB-01 | Spracheingabe (optional) | M7 | WEB | W2 | M7-OPS-01 | M | offen |
 | M7-DEP-01 | Deployment M7 (optional) | M7 | HUM | W3 | alle M7 | H | offen |
+
+### Ausstehende Deployments (bewusste Abweichung von `CLAUDE.md §10`)
+
+Seit 2026-10-21 sperrt Railway nach einem Sicherheitsvorfall die Builds für Hobby (Devlog 2026-10-21 und 2026-10-22). M1 bis M3 sind deshalb nicht live. Die Entwicklung läuft trotzdem auf `dev` weiter, ab M4 ausdrücklich vom Entwickler freigegeben, obwohl M4-SH-01 und M4-API-01 auf M3-DEP-01 verweisen.
+
+Die Deployments werden **einzeln und in dieser Reihenfolge** nachgeholt. Jedes bekommt den **vollständigen Smoke-Test** aus seinem `DEP`-Paket in Abschnitt 6, keiner wird übersprungen oder mit dem nächsten zusammengelegt:
+
+| Paket | Stand, der nach `master` geht | Status |
+|---|---|---|
+| M1-DEP-01 | `09d6934` (liegt schon auf `master`) | offen |
+| M2-DEP-01 | `2062c5b` (M2 ohne M3), gezielt statt ganz `dev` | offen |
+| M3-DEP-01 | `55d35a0` (M3 ohne M4), gezielt statt ganz `dev` | offen |
+
+- **M4-DEP-01 beginnt erst, wenn M1-DEP-01 bis M3-DEP-01 auf `fertig` stehen.**
+- Braucht ein Meilenstein nach seinem Smoke-Test einen Fix, entsteht er auf einem Branch von `master`, geht nach `master` und danach `master` nach `dev`.
+- Der Prod-Seed läuft immer aus dem Code, der gerade auf `master` deployt ist, in einem temporären Worktree von `master` (`git worktree add --detach`), nie aus dem Hauptcheckout auf `dev`. Der Seed auf `dev` setzt `sources` und `chunks` voraus und legt ein pg-boss-Schema an.
 
 ---
 
@@ -251,7 +267,7 @@ flowchart LR
 | `pnpm-lock.yaml` | jedes Paket, das eine `package.json` ändert | **Konflikte löst der Entwickler beim Merge mit `pnpm install`.** pnpm führt widersprüchliche Lockfile-Stände dabei selbst zusammen. |
 | `apps/api/package.json` | M0-API-01, dann nur das Gerüst-Paket `Mx-API-01` jedes Meilensteins | Welle 1 des Meilensteins |
 | `apps/web/package.json` | M0-WEB-01, M1-WEB-01, M4-WEB-02, M5-OPS-01 | höchstens ein Web-Paket pro Welle (so geplant) |
-| `apps/api/src/app.module.ts` | M0-API-01, M0-API-02, dann das Gerüst-Paket `Mx-API-01`, in M5 M5-API-02 | Gerüst registriert alle neuen Module als leere Stubs. Parallele Pakete füllen sie nur aus. |
+| `apps/api/src/app.module.ts` | M0-API-01, M0-API-02, dann das Gerüst-Paket `Mx-API-01`, in M4 M4-API-02 (`ModelsModule`), in M5 M5-API-02 | Gerüst registriert alle neuen Module als leere Stubs. Parallele Pakete füllen sie nur aus. |
 | `apps/api/src/db/schema.ts`, `src/db/migrations/**` | nur Gerüst-Pakete (M0-API-02, Mx-API-01) | Welle 1 |
 | `apps/api/src/config/**`, `apps/api/.env.example` | M0-API-01 legt **alle** Variablen an | danach nur nach Rückfrage |
 | `packages/shared/src/index.ts` | das SH-Paket der jeweiligen Welle | pro Welle gibt es höchstens ein SH-Paket |
@@ -445,14 +461,16 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M1-DEP-01 – Deployment M1 [Mensch]
 
-- `db:seed:prod` mit `apps/api/.env.production` ausführen (PE-26).
+- Deploy-Log zeigt die Migrationen `0001` und `0002`, danach `GET /health` → `200` mit `database: up`.
+- `db:seed:prod` mit `apps/api/.env.production` ausführen (PE-26), aus einem Worktree von `master` (Abschnitt 3 „Ausstehende Deployments“). Das Log nennt Host und Projekt-URL von prod.
 - **Smoke-Test:**
   - [ ] `/notebooks` ohne Login leitet auf `/login` um.
   - [ ] Login mit dem Demo-Account klappt. Die Login-Seite hat keine Registrierung und kein „Passwort vergessen“.
   - [ ] Notebook anlegen, umbenennen und löschen klappt.
   - [ ] `GET /notebooks` ohne bzw. mit ungültigem Token → `401`.
-  - [ ] Supabase-REST mit Anon-Key auf `notebooks` liefert keine Zeilen (RLS).
+  - [ ] Supabase-REST mit Anon-Key auf `notebooks` liefert keine Zeilen (RLS), geprüft bei mindestens einer vorhandenen Zeile.
   - [ ] Registrierung über die Supabase-API mit Anon-Key wird abgelehnt.
+  - [ ] Die Browser-Konsole zeigt keinen `404` beim Prefetch von `/login` mehr.
 - README-Stand, Devlog.
 
 ### M2 – Quellen
@@ -470,6 +488,8 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M2-DEP-01 – Deployment M2 [Mensch]
 
+- Nach `master` geht gezielt der Stand `2062c5b`, nicht ganz `dev` (Abschnitt 3 „Ausstehende Deployments“).
+- Deploy-Log zeigt die Migrationen `0003` und `0004`. Der private Bucket `sources` existiert in prod.
 - **Smoke-Test:**
   - [ ] PDF, TXT, MD und eingefügten Text hinzufügen. Alle erscheinen mit Status „wartet“.
   - [ ] Eine umbenannte Binärdatei `.txt` wird mit verständlicher Meldung abgelehnt.
@@ -495,13 +515,18 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M3-DEP-01 – Deployment M3 [Mensch]
 
-- Seed gegen Produktion erneut ausführen, damit die Beispielquelle entsteht.
+- Nach `master` geht gezielt der Stand `55d35a0`, nicht ganz `dev` (Abschnitt 3 „Ausstehende Deployments“).
+- Build-Log zeigt Node 24 (pg-boss 12 verlangt mindestens 22.12). Deploy-Log zeigt die Migrationen `0005` und `0006`, beim Start entsteht das Schema `pgboss`.
+- Seed gegen Produktion erneut ausführen, aus einem Worktree von `master`, damit die Beispielquelle entsteht. Sie wird live „bereit“.
 - **Smoke-Test:**
   - [ ] Eine PDF mit mehreren Seiten wechselt live von „wartet“ über „wird verarbeitet“ auf „bereit“, ohne Reload.
   - [ ] Eine PDF ohne Text wird „fehlgeschlagen“, mit verständlicher Meldung.
+  - [ ] Eine Markdown-Datei wird „bereit“.
   - [ ] `chunks` enthält Zeilen mit `page`, `notebook_id` und `user_id`.
   - [ ] Railway-Logs zeigen nur IDs, Status und Dauer, keine Inhalte.
+  - [ ] Bei einem Redeploy zeigt das Railway-Log, dass pg-boss nach `SIGTERM` sauber stoppt (unter Windows nicht messbar).
   - [ ] Ausgaben in der Mistral-Konsole sind plausibel.
+- Testdateien: `D:\Private Projekte\nlm-testdateien` (`text-dreiseitig.pdf`, `ohne-text.pdf`, `notiz.md`).
 - README-Stand, Devlog.
 
 ### M4 – Chat mit Zitaten
@@ -519,6 +544,7 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 #### M4-DEP-01 – Deployment M4 [Mensch]
 
+- Vorbedingung: M1-DEP-01 bis M3-DEP-01 stehen auf `fertig`, jeweils mit vollständigem Smoke-Test (Abschnitt 3 „Ausstehende Deployments“).
 - **Smoke-Test:**
   - [ ] Eine Frage zur Beispielquelle ergibt eine deutsche Antwort, gestreamt (nicht als Block), mit `[n]`-Badges.
   - [ ] Hover zeigt Titel, Seite und Auszug. Klick öffnet das Seitenpanel mit dem Abschnitt.
@@ -1002,7 +1028,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Umsetzung:**
   1. Dependency `unpdf`, devDependency `@types/multer`.
   2. `sources` laut §4 (FK `notebook_id` mit Cascade, Indizes `user_id` und `notebook_id`).
-  3. `usage_events` laut `apps/api/CLAUDE.md „Datenbank“` (kein FK, `user_id` nullable, beide Indizes).
+  3. `usage_events` laut `apps/api/CLAUDE.md „Datenbank“` (kein FK zu `notebooks` oder `sources`, `user_id` nullable mit FK auf `auth.users` und `ON DELETE SET NULL`, beide Indizes).
   4. RLS-Migration für beide Tabellen. Gegen dev anwenden.
   5. Stubs `SourcesModule` und `StorageModule` registrieren.
   6. Prüfen, dass `unpdf` sich aus dem CJS-Build laden lässt. Wenn nicht, PE-19 anwenden.
@@ -1220,7 +1246,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md` „sources und ingestion“, „limits“ (Aufräum-Job), „RUN_MODE“, „Datenbank“ (pg-boss); `docs/deployment.md „Datenbankverbindung“`; PE-12, PE-14
 - **Abhängigkeiten:** M3-API-01
 - **Parallel möglich mit:** M3-API-02, M3-API-03
-- **Dateien (Eigentum):** `apps/api/src/queue/**`, `apps/api/src/sources/sources.service.ts`, `apps/api/src/sources/sources.module.ts`, `apps/api/src/limits/usage-cleanup.job.ts`, `apps/api/src/limits/limits.module.ts`
+- **Dateien (Eigentum):** `apps/api/src/queue/**`, `apps/api/src/sources/sources.service.ts`, `apps/api/src/sources/sources.service.test.ts` (der Test baut den Service direkt und braucht die Queue als neuen Parameter), `apps/api/src/sources/sources.module.ts`, `apps/api/src/limits/usage-cleanup.job.ts`, `apps/api/src/limits/limits.module.ts`, `apps/api/test/support/**` (die gemeinsame Test-App muss die Queue ersetzen, sobald das Quellen-Modul sie einbindet)
 - **Nicht anfassen:** `apps/api/src/ingestion/**`, übrige `apps/api/src/limits/**`
 - **Umsetzung:**
   1. `QueueService` startet pg-boss (Pool max. 3) bei `onModuleInit` und stoppt beim Shutdown. Queues `ingest-source` und `cleanup-usage-events` anlegen.
@@ -1243,7 +1269,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „sources und ingestion“` (ganzer Ablauf), „Logging“; `CLAUDE.md §7 „DSGVO“`; PE-14
 - **Abhängigkeiten:** M3-API-02, M3-API-03, M3-API-04
 - **Parallel möglich mit:** M3-API-06
-- **Dateien (Eigentum):** `apps/api/src/ingestion/**` außer `extraction/` und `chunking/`
+- **Dateien (Eigentum):** `apps/api/src/ingestion/**` außer `extraction/` und `chunking/`, `apps/api/test/support/**` (die gemeinsame Test-App startet das AppModule im Modus `all` und lädt damit den Worker, `FakeQueue` braucht deshalb `work`)
 - **Nicht anfassen:** `apps/api/src/queue/**`, `apps/api/src/llm/**`
 - **Umsetzung:**
   1. Handler: Quelle laden (mit `userId` aus dem Payload) und auf `processing` setzen. Datei aus Storage laden, `extractPages`, `chunkPages`, `embed`.
@@ -1269,7 +1295,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Dateien (Eigentum):** `apps/api/src/db/seed.ts`, `apps/api/src/db/seed/**`
 - **Nicht anfassen:** `apps/api/src/ingestion/**`
 - **Umsetzung:**
-  1. Der Seed läuft als Nest-Application-Context ohne HTTP und ohne Worker. Er nutzt `StorageService` und `QueueService`.
+  1. Der Seed läuft als Nest-Application-Context ohne HTTP und ohne Worker: eigenes Seed-Modul unter `seed/` mit `AppConfigModule` (`RUN_MODE` fest `api`), `DbModule`, `StorageModule` und `QueueModule`, kein `IngestionModule`. Er nutzt `StorageService` und `QueueService`. Weil `AppConfigModule` die vollständige Konfiguration braucht, prüft der Seed das ganze API-Env-Schema plus `DEMO_USER_*` (`apps/api/CLAUDE.md` „seed“). Der Seed läuft unter `tsx`, das keine Decorator-Metadaten erzeugt: Jeder Provider im Seed-Modul nennt seine Abhängigkeiten per `@Inject` oder `inject`.
   2. Vor dem Löschen der Notebooks werden alle Storage-Dateien des Demo-Nutzers entfernt.
   3. Beispielquelle: selbst verfasster deutscher Markdown-Text (`seed/demo-source.md`, ca. 3–5 Seiten). Er erklärt z. B. das Projekt, RAG und Zitate, enthält einen eindeutigen Fakt für die Demo-Frage und keine fremden urheberrechtlich geschützten Inhalte.
   4. Ablauf: in Storage hochladen, Quelle `pending` anlegen, einreihen.
@@ -1313,14 +1339,14 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „Datenbank“`; `CLAUDE.md §4`; PE-02, PE-08
 - **Abhängigkeiten:** M3-DEP-01
 - **Parallel möglich mit:** M4-SH-01
-- **Dateien (Eigentum):** `apps/api/src/db/schema.ts`, `apps/api/src/db/migrations/**`, `apps/api/src/app.module.ts`, `apps/api/src/retrieval/retrieval.module.ts`, `apps/api/src/chat/chat.module.ts`
+- **Dateien (Eigentum):** `apps/api/src/db/schema.ts`, `apps/api/src/db/migrations/**`, `apps/api/src/app.module.ts`, `apps/api/src/app.module.test.ts`, `apps/api/src/retrieval/retrieval.module.ts`, `apps/api/src/chat/chat.module.ts`
 - **Nicht anfassen:** übrige Dateien dieser Ordner
 - **Umsetzung:**
   1. `messages` laut §4. `citations jsonb` nimmt Einträge im Format `StoredCitation` auf, Standard `[]`. Indizes `(notebook_id, created_at)` und `user_id`. RLS-Migration. Gegen dev anwenden.
-  2. Stubs registrieren.
+  2. Stubs registrieren, beide in `RUN_MODE_MODULES.http`: Nur der Chat-Endpunkt braucht Retrieval, der Worker keins von beiden.
 - **Schnittstellen:** keine
-- **Akzeptanzkriterien:** Migration angewendet, RLS aktiv.
-- **Tests:** keine neuen
+- **Akzeptanzkriterien:** Migration angewendet, RLS aktiv. `ChatModule` und `RetrievalModule` laden in `all` und `api`, nicht in `worker`.
+- **Tests:** `app.module.test.ts` um die Zuordnung der beiden Module zu den `RUN_MODE`s ergänzen
 - **Doku-Pflichten:** keine
 - **Aufwand:** S
 - **Kürzbar bei Zeitnot:** nein
@@ -1333,12 +1359,12 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/api/CLAUDE.md „llm“`, „chat“ (Abbruch); `CLAUDE.md §6`; PE-21, PE-32
 - **Abhängigkeiten:** M4-API-01, M4-SH-01
 - **Parallel möglich mit:** M4-API-03, M4-API-04, M4-API-05, M4-WEB-01, M4-WEB-02
-- **Dateien (Eigentum):** `apps/api/src/llm/**`
+- **Dateien (Eigentum):** `apps/api/src/llm/**`, `apps/api/src/app.module.ts`, `apps/api/src/app.module.test.ts`
 - **Nicht anfassen:** `apps/api/src/chat/**`
 - **Umsetzung:**
   1. `ChatProvider.stream({ model, messages, signal })` liefert `AsyncIterable<string>`. Die Implementierung reicht `signal` an den `openai`-Client weiter.
   2. `ModelRegistry` aus `CHAT_MODELS` (Mistral), dazu `OLLAMA_CHAT_MODELS`, falls `OLLAMA_BASE_URL` gesetzt ist. Ollama-IDs tragen das Präfix `ollama:`. `resolve(id?)` liefert Provider und Modellname oder einen Fehler `400` bei unbekanntem Modell. Ohne Angabe gilt das erste Modell.
-  3. `GET /models` liefert `ModelListResponse`. Labels: Mistral-Namen lesbar, Ollama mit Kennzeichen „Lokal“.
+  3. `GET /models` liefert `ModelListResponse`. Labels: Mistral-Namen lesbar, Ollama mit Kennzeichen „Lokal“. Der Controller liegt in einem eigenen `llm/models.module.ts`, registriert in `RUN_MODE_MODULES.http`. Im `LlmModule` (lädt in jedem Modus) würde er auch im Worker erscheinen, der nur `/health` bedient.
 - **Schnittstellen:** nutzt `ModelListResponseSchema`. Stellt `CHAT_PROVIDER_FACTORY` und `ModelRegistry` bereit.
 - **Akzeptanzkriterien:** Ein unbekanntes Modell wird abgelehnt. Ohne `OLLAMA_BASE_URL` erscheint kein lokales Modell. Abbruch per Signal beendet die Iteration.
 - **Tests:** Modell-Whitelist (`apps/api/CLAUDE.md „Tests“`), Abbruch mit gefaktem Stream
@@ -1384,6 +1410,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
   3. Die Chunks stehen als `<source n="…" title="…" page="…">…</source>`. Titel werden escaped, schließende Tags im Inhalt neutralisiert.
   4. Der Verlauf umfasst die letzten 6 Nachrichten.
   5. `extractCitationNumbers(text)` und `mapCitations(numbers, chunks)` liefern `StoredCitation[]`. Ungültige Nummern werden verworfen, Duplikate entfernt.
+  6. Den Eingabetyp für Chunks definiert das Paket selbst, minimal (`sourceId`, `chunkId`, `title`, `page`, `content`). M4-API-03 entsteht parallel, M4-API-06 bildet dessen Ergebnis darauf ab.
 - **Schnittstellen:** nutzt `StoredCitationSchema`
 - **Akzeptanzkriterien:** Ein Quellinhalt mit `</source>` oder „Ignoriere alle Anweisungen“ bricht den Block nicht auf. `[99]` ohne Chunk wird verworfen.
 - **Tests:** Unit-Tests Prompt-Aufbau (Reihenfolge, Escaping, Verlaufslänge, Sprache) und Zitat-Zuordnung (gültig, ungültig, doppelt, `[1][2]`, `[1, 2]`)
@@ -1417,9 +1444,10 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Pflichtlektüre:** `apps/web/CLAUDE.md „Chat und Zitate“` (Stream, Stopp), „Tests“; PE-20
 - **Abhängigkeiten:** M4-SH-01
 - **Parallel möglich mit:** M4-API-02 bis M4-API-05, M4-WEB-02
-- **Dateien (Eigentum):** `apps/web/src/lib/sse.ts` (+ Test), `apps/web/src/features/chat/use-chat-stream.ts` (+ Test)
-- **Nicht anfassen:** `apps/web/src/lib/api-client.ts`. Die Token-Logik wird importiert, nicht geändert.
+- **Dateien (Eigentum):** `apps/web/src/lib/sse.ts` (+ Test), `apps/web/src/features/chat/use-chat-stream.ts` (+ Test), `apps/web/src/lib/api-client.ts` (+ Test), dort nur die Ergänzung aus Schritt 0
+- **Nicht anfassen:** bestehendes Verhalten von `apiFetch`
 - **Umsetzung:**
+  0. `api-client.ts` gibt die Token-Logik bisher nicht heraus, `apiFetch` liest immer JSON. Ergänzung: eine Variante, die mit derselben Token- und `401`-Logik die rohe `Response` liefert und Fehler vor dem Stream als `ApiError` wirft. So gibt es Token-Erneuerung und Fehlerformat nur an einer Stelle.
   1. `readSseStream(response, onEvent)`: SSE-Frames aus dem `ReadableStream` parsen (Zeilenpuffer, `event:` und `data:`) und jedes Event mit dem Schema aus `packages/shared` prüfen.
   2. `useChatStream(notebookId)`: `send(question, model)` mit `AbortController`. Zustände `idle`, `streaming`, `done`, `aborted`, `error`, dazu der gesammelte Text und die Zitate. `stop()` bricht ab. Beim Unmount wird ebenfalls abgebrochen. Ein `409` oder `429` vor dem Stream wird als Fehler mit API-Meldung gezeigt.
 - **Schnittstellen:** nutzt die SSE-Event-Schemas und `ChatRequestSchema`

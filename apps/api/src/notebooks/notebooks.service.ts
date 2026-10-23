@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Notebook } from '@notebooklm/shared';
 import { NotFoundError } from '../common/errors';
 import { LimitsService } from '../limits/limits.service';
+import { SourcesService } from '../sources/sources.service';
 import { toNotebook } from './notebook.mapper';
 import { NotebooksRepository } from './notebooks.repository';
 
@@ -12,6 +13,7 @@ export class NotebooksService {
   constructor(
     private readonly notebooks: NotebooksRepository,
     private readonly limits: LimitsService,
+    private readonly sources: SourcesService,
   ) {}
 
   async list(userId: string): Promise<Notebook[]> {
@@ -40,7 +42,17 @@ export class NotebooksService {
     return toNotebook(record);
   }
 
+  /**
+   * Removes the files of all sources first, then the notebook row; sources
+   * and everything below follow by cascade (PE-22). If storage fails, the
+   * database stays unchanged and the delete can be retried, so no file is
+   * left behind without its source (Art. 17).
+   */
   async delete(userId: string, id: string): Promise<void> {
+    if (!(await this.notebooks.findById(userId, id))) {
+      throw new NotFoundError(NOT_FOUND_MESSAGE);
+    }
+    await this.sources.removeNotebookFiles(userId, id);
     const deleted = await this.notebooks.delete(userId, id);
     if (!deleted) {
       throw new NotFoundError(NOT_FOUND_MESSAGE);

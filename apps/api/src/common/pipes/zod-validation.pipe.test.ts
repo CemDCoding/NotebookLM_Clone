@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { AppModule } from '../../app.module';
 import { validateEnv } from '../../config';
+import { PG_BOSS } from '../../queue/queue.service';
 import { Public } from '../decorators';
 import { ZodValidationPipe } from './zod-validation.pipe';
 
@@ -99,6 +100,17 @@ class ItemsController {
   }
 }
 
+// Stands in for pg-boss: accepts every call and never touches a database.
+const idleBoss = {
+  on: () => undefined,
+  start: () => Promise.resolve(),
+  stop: () => Promise.resolve(),
+  createQueue: () => Promise.resolve(),
+  send: () => Promise.resolve(null),
+  work: () => Promise.resolve('worker'),
+  schedule: () => Promise.resolve(),
+};
+
 describe('ZodValidationPipe as global pipe', () => {
   let app: INestApplication;
 
@@ -113,7 +125,11 @@ describe('ZodValidationPipe as global pipe', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule.forRoot(env)],
       controllers: [ItemsController],
-    }).compile();
+    })
+      // pg-boss connects on start; this test has no database.
+      .overrideProvider(PG_BOSS)
+      .useValue(idleBoss)
+      .compile();
     app = moduleRef.createNestApplication({ logger: false });
     await app.init();
   });

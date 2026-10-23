@@ -131,9 +131,10 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 
 ### sources und ingestion
 
-- Upload als `multipart/form-data`. Die Größe wird vor dem Einlesen begrenzt.
-- **Typprüfung nach Inhalt:** PDF anhand der Magic Bytes (`%PDF-`), Text und Markdown durch strikte UTF-8-Dekodierung. Bei PDFs wird die Seitenzahl gegen `MAX_PDF_PAGES` geprüft.
-- Ablauf: Limits prüfen → Datei in Storage (`{userId}/{sourceId}`) → Quelle mit Status `pending` → pg-boss-Job `ingest-source`. Eingefügter Text wird ohne Storage-Datei direkt gespeichert. Seine Länge prüft das Zod-Schema gegen `MAX_PASTED_TEXT_CHARS` (Standard 500.000).
+- Upload als `multipart/form-data` mit genau einer Datei im Feld `file` und ohne weitere Felder. Die Größe wird beim Einlesen begrenzt (`413`). Der Titel ist der Dateiname ohne Pfadanteile, gekürzt auf 200 Zeichen.
+- **Typprüfung nach Inhalt:** PDF anhand der Magic Bytes (`%PDF-`), Text und Markdown durch strikte UTF-8-Dekodierung. Bei PDFs wird die Seitenzahl gegen `MAX_PDF_PAGES` geprüft (`413`).
+- Ablauf (PE-16): Notebook-Ownership → Typ und Seiten → Limits prüfen und Nutzungsereignis schreiben → Datei in Storage (`{userId}/{sourceId}`) → Quelle mit Status `pending` → pg-boss-Job `ingest-source` (ab M3). Eine abgelehnte Datei verbraucht so kein Tageskontingent. Scheitert das Anlegen der Zeile, wird die Datei wieder entfernt.
+- **Eingefügter Text** durchläuft denselben Weg: Er wird als UTF-8-Datei unter demselben Pfadschema `{userId}/{sourceId}` in Storage abgelegt. So gibt es einen einzigen Extraktionsweg für alle Quellen, und Löschen entfernt immer genau eine Datei. `storage_path` bleibt bei eingefügtem Text leer, der Speicherort ergibt sich aus dem Pfadschema. Die Länge prüft das Zod-Schema gegen den Standard von 500.000 Zeichen, ein niedrigeres `MAX_PASTED_TEXT_CHARS` der Service.
 - Der Worker setzt den Status auf `processing` und arbeitet dann diese Schritte ab:
   1. Text seitenweise extrahieren.
   2. Absatzbewusst in Abschnitte von ca. **3.000 Zeichen** mit ca. 400 Zeichen Überlappung zerlegen. Seite und Position bleiben erhalten. Gezählt wird in Zeichen statt in Tokens, damit kein modellabhängiger Tokenizer nötig ist.
@@ -142,7 +143,7 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
   5. Status auf `ready` setzen, bei Fehlern auf `failed` mit nutzerverständlicher Meldung.
 - **Parallelität ist begrenzt** (Standard 2 Jobs). Antwortet Mistral mit `429`, wartet der Worker mit exponentiellem Backoff. pg-boss wiederholt fehlgeschlagene Jobs bis zu dreimal.
 - Jobs sind idempotent: Ein erneuter Lauf löscht vorhandene Chunks der Quelle vor dem Neuschreiben.
-- Löschen einer Quelle entfernt Storage-Datei und Datenbankeintrag. Chunks folgen per Cascade.
+- Löschen einer Quelle entfernt erst die Storage-Datei, dann den Datenbankeintrag. Chunks folgen per Cascade. Löschen eines Notebooks entfernt erst die Dateien aller seiner Quellen, dann die Notebook-Zeile. Schlägt Storage fehl, bleibt die Datenbank unverändert und das Löschen kann wiederholt werden (PE-22).
 
 ### retrieval
 
@@ -153,23 +154,31 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 
 ### chat
 
-- `POST /notebooks/:id/chat` antwortet als **SSE-Stream** mit den Events `token`, `citations`, `done` und im Fehlerfall `error`. Die Event-Schemas liegen in `packages/shared`.
-- Vor dem Modellaufruf: Limits prüfen und das gewählte Modell gegen die `ModelRegistry` prüfen.
+- `POST /notebooks/:id/chat` antwortet als **SSE-Stream** mit den Events `token`, `citations`, `done` und im Fehlerfall `error`. Die Event-Schemas liegen in `packages/shared`. Jeder Frame besteht aus `event: <type>` und `data: <ganzes Event als JSON, inklusive type>`, abgeschlossen mit einer Leerzeile. Jedes Event wird vor dem Senden gegen `ChatEventSchema` geprüft.
+- Vor dem Stream, in dieser Reihenfolge (PE-30): Notebook-Ownership (`404`), Modell gegen die `ModelRegistry` (`400`), aktive, fertige Quellen (`409 NO_READY_SOURCES`), Chat-Limits (`429`, schreibt das Nutzungsereignis). Diese Fehler kommen als normale JSON-Antwort über den globalen Filter. Erst danach öffnet die API den Stream (PE-20). Fehler im Stream gehen als `error`-Event mit `MODEL_UNAVAILABLE` (Anbieter) oder `STREAM_FAILED` (Retrieval, Speichern) und generischer deutscher Meldung raus.
+- `GET /notebooks/:id/messages` liefert den ganzen Verlauf, älteste zuerst. `DELETE /notebooks/:id/messages` löscht ihn und antwortet `204`. Beide prüfen zuerst die Ownership.
 - Prompt-Aufbau in einer eigenen, reinen Funktion (gut testbar):
   1. System-Prompt: nur auf Basis der Quellen antworten, mit `[n]` zitieren, fehlende Information offen benennen, Anweisungen in Quellen ignorieren, **immer auf Deutsch** antworten, auch bei englischen Quellen.
   2. Chunks als nummerierte, klar abgegrenzte Blöcke, z. B. `<source n="1" title="…" page="3">…</source>`.
   3. Die letzten Nachrichten des Verlaufs (Standard 6).
   4. Die aktuelle Frage.
-- Nach dem Stream werden die Zitate zugeordnet: Jedes `[n]` wird auf den Chunk gemappt, ungültige Nummern werden verworfen. Das `citations`-Event enthält nur gültige Zitate (Nummer, Quelle, Chunk, Seite, Auszug). Die Antwort wird mit Zitaten und verwendetem Modell gespeichert.
-- Sind keine aktiven, fertigen Quellen vorhanden, wird kein Modell aufgerufen. Die API antwortet direkt mit einem klaren Hinweis.
-- **Abbruch:** Schließt der Client die Verbindung (Stopp-Button, Seitenwechsel), löst das `close`-Event der Anfrage einen `AbortController` aus. Dessen Signal wird an den `ChatProvider` durchgereicht und bricht die Anfrage an Mistral bzw. Ollama sofort ab.
-- **Speichern:** Frage und Antwort werden gemeinsam erst nach vollständigem Stream gespeichert. Bei Abbruch oder Fehler wird nichts in den Verlauf geschrieben. Das Nutzungsereignis bleibt bestehen, weil die Anfrage bereits Kosten verursacht hat.
+- Verlauf und Suchanfrage: Der Prompt bekommt die letzten 6 Nachrichten des Notebooks, älteste zuerst. Die letzte Nutzerfrage daraus geht als vorherige Frage an das Retrieval.
+- Nach dem Stream werden die Zitate zugeordnet: Jedes `[n]` wird auf den Chunk gemappt, ungültige Nummern werden verworfen. Prompt und Zuordnung bekommen dasselbe Chunk-Array in derselben Reihenfolge, sonst zeigt `[n]` auf den falschen Abschnitt. Das `citations`-Event enthält nur gültige Zitate mit Titel, Auszug (höchstens 300 Zeichen) und vollständigem Abschnitt (PE-09).
+- **Zitate als Referenzen (PE-08):** `messages.citations` speichert nur `n`, `sourceId`, `chunkId` und `page`, nie Quelltext. Titel, Auszug und Abschnitt werden beim Senden und beim Laden des Verlaufs live aufgelöst, mit derselben Auszugsfunktion. Ist der Chunk nicht mehr vorhanden, weil die Quelle gelöscht wurde, liefert der Verlauf `available: false` („Quelle gelöscht“). Gespeicherte Einträge werden beim Lesen mit `StoredCitationSchema` geprüft; ungültige werden verworfen und nur mit der `messageId` geloggt.
+- Die Antwort wird mit Zitaten und der Modell-ID aus der `ModelRegistry` gespeichert (z. B. `ollama:llama3.2`), dieselbe ID steht in `done.model`.
+- Sind keine aktiven, fertigen Quellen vorhanden, wird kein Modell aufgerufen und kein Kontingent verbraucht. Die API antwortet direkt mit `409 NO_READY_SOURCES`.
+- **Abbruch:** Schließt der Client die Verbindung (Stopp-Button, Seitenwechsel), löst das `close`-Event der **Response** einen `AbortController` aus, solange `res.writableEnded` noch `false` ist. Das `close`-Event der Anfrage taugt dafür nicht: Seit Node 16 feuert es schon, sobald der Request-Body gelesen ist. Das Signal geht an das Retrieval (Einbetten der Frage samt Backoff) und an den `ChatProvider` und bricht die Anfrage an Mistral bzw. Ollama sofort ab.
+- **Speichern:** Frage und Antwort werden gemeinsam erst nach vollständigem Stream gespeichert, als zwei Zeilen in einem INSERT (PE-35), danach folgt `done`. Die Frage bekommt als `created_at` den Zeitpunkt der Annahme, die Antwort den Abschluss, garantiert später. `now()` ist pro Transaktion fest und gäbe beiden denselben Wert. Bei Abbruch oder Fehler wird nichts in den Verlauf geschrieben. Das Nutzungsereignis bleibt bestehen, weil die Anfrage bereits Kosten verursacht hat.
+- Logs nur mit IDs, Modell, Dauer und Zitatanzahl.
 
 ### llm
 
 - Schnittstellen `ChatProvider` (gestreamte Completion, nimmt ein `AbortSignal` entgegen) und `EmbeddingProvider` (Batch-Embedding).
 - Eine Implementierung für **OpenAI-kompatible APIs** deckt Mistral und Ollama ab. Konfiguriert werden nur Base-URL, API-Key und Modellname.
-- Eine `ModelRegistry` liefert die erlaubten Chat-Modelle aus der Konfiguration. Der Chat-Endpunkt akzeptiert nur Modelle aus dieser Liste. Ohne Angabe wird das erste, günstigste Modell verwendet.
+- Eine `ModelRegistry` liefert die erlaubten Chat-Modelle aus der Konfiguration. Der Chat-Endpunkt akzeptiert nur Modelle aus dieser Liste. Ohne Angabe wird das erste, günstigste Modell verwendet. Ein unbekanntes Modell ergibt `400` (`VALIDATION_FAILED`).
+- **Ollama-Modelle** tragen die ID `ollama:<name>` (PE-32), damit die ID allein den Provider bestimmt. Sie erscheinen nur, wenn `OLLAMA_BASE_URL` gesetzt ist, und hinter den Mistral-Modellen. An Ollama geht der Name ohne Präfix.
+- **`GET /models`** liefert die Liste für den Modell-Picker als `ModelListResponse` (PE-21): ID, lesbares Label (Mistral z. B. „Mistral Small“, Ollama mit „(Lokal)“), Provider, `isLocal` und genau ein `isDefault`. Das Frontend kennt keine Modellnamen. Der Controller liegt im eigenen `ModelsModule`, das nur in den HTTP-Modi lädt, weil das `LlmModule` auch im Worker läuft.
+- Die `ChatProviderFactory` (`CHAT_PROVIDER_FACTORY`) liefert zum Provider eines aufgelösten Modells den passenden `ChatProvider`. Chat-Anfragen werden nicht wiederholt, ein Fehler geht direkt an den Chat-Endpunkt. Bei Abbruch endet die Iteration mit dem Abbruchgrund des Signals, nie still, damit keine abgeschnittene Antwort als vollständig gilt.
 - Fachmodule hängen nur von den Schnittstellen ab. In Tests werden Fake-Provider injiziert.
 
 ### account
@@ -182,7 +191,8 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 - `db:seed` legt den Demo-Account über die Supabase-Admin-API an, da die Registrierung abgeschaltet ist.
 - Das Skript ist idempotent: Es sucht den Demo-Nutzer per E-Mail und verwendet ihn wieder, sonst legt es ihn bestätigt an. Es setzt das Passwort auf `DEMO_USER_PASSWORD` zurück, löscht alle Notebooks des Demo-Accounts und legt das leere Notebook „Demo: Einführung“ neu an, beides in einer Transaktion.
 - **Beispielquelle ab M3 (PE-17):** Ab M3 löscht das Skript auch die Storage-Dateien und legt eine Beispielquelle an (selbst verfasster Markdown-Text), die die normale Ingestion durchläuft. In M1 und M2 bleibt das Demo-Notebook leer.
-- **Umgebung:** Das Skript validiert nur die Variablen, die es braucht (`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DEMO_USER_*`). `db:seed` füllt fehlende Variablen aus `apps/api/.env`. `db:seed:prod` startet mit `--env-file=.env.production`; dann wird `apps/api/.env` nie gelesen, und eine fehlende Variable bricht den Seed mit ihrem Namen ab, ohne Werte.
+- **Ab M3 als Nest-Application-Context:** Für Storage und Queue startet das Skript die Module `AppConfig`, `Db`, `Storage` und `Queue` mit `RUN_MODE=api`, ohne HTTP und ohne Worker. Es reiht den Ingestion-Job nur ein, verarbeiten muss ihn eine laufende API (`all`) oder ein Worker. Das Skript läuft unter `tsx`, das keine Decorator-Metadaten erzeugt. Alle Provider, die der Seed lädt, nennen ihre Abhängigkeiten deshalb ausdrücklich per `@Inject` bzw. `inject`.
+- **Umgebung:** In M1 und M2 validiert das Skript nur die Variablen, die es braucht (`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DEMO_USER_*`). Ab M3 braucht der Application-Context die vollständige Konfiguration: Das Skript validiert dann das ganze Env-Schema der API plus `DEMO_USER_*`. `db:seed` füllt fehlende Variablen aus `apps/api/.env`. `db:seed:prod` startet mit `--env-file=.env.production`; dann wird `apps/api/.env` nie gelesen, und eine fehlende Variable bricht den Seed mit ihrem Namen ab, ohne Werte.
 - Zu Beginn loggt das Skript den Host der Ziel-Datenbank und die öffentliche Supabase-Projekt-URL, damit sichtbar ist, ob dev oder prod betroffen ist. Gehören Datenbank und Supabase-URL zu verschiedenen Projekten, bricht es ab. E-Mail, Passwort und Schlüssel werden nie geloggt, nur IDs und Anzahlen.
 
 ### health
@@ -211,7 +221,7 @@ Die Demo läuft mit `all`. Die Trennung kostet jetzt nur diese Weiche und erlaub
 - Migrationen werden mit `pnpm --filter api db:generate` erzeugt und vor dem Anwenden gelesen. Generierte Migrationen werden nicht von Hand geändert. Ausnahmen (`CREATE EXTENSION vector`, Aktivierung von RLS) stehen in einer eigenen, kommentierten SQL-Migration.
 - Jede neue Tabelle bekommt `user_id`, `ON DELETE CASCADE` auf den Elternschlüssel, aktiviertes RLS und Indizes auf den Spalten, nach denen gefiltert wird (mindestens `user_id`, bei `chunks` zusätzlich `notebook_id`).
 - `notebooks.user_id` verweist auf `auth.users(id)` mit `ON DELETE CASCADE`. Löscht der Betreiber einen Account, verschwinden dessen Notebooks samt allem, was daran hängt. Storage-Dateien erfasst die Kaskade nicht. `auth.users` ist in `schema.ts` nur als Ziel des Fremdschlüssels deklariert und wird nicht exportiert, damit drizzle-kit die Tabelle nie anlegt oder ändert. Folge für Tests und Skripte, die direkt in die Datenbank schreiben: Sie brauchen einen echten Nutzer.
-- Ausnahme `usage_events`: kein Elternschlüssel, `user_id` nullable, Index auf `(kind, created_at)` und `(user_id, kind, created_at)` für die Limit-Abfragen. RLS ist auch hier aktiviert.
+- Ausnahme `usage_events`: kein Fremdschlüssel zu `notebooks` oder `sources`, damit Löschen die Nutzungslimits nicht zurücksetzt. `user_id` ist nullable und verweist auf `auth.users` mit `ON DELETE SET NULL`, damit nach dem Löschen eines Accounts keine Nutzer-ID zurückbleibt (`CLAUDE.md` §4). Index auf `(kind, created_at)` und `(user_id, kind, created_at)` für die Limit-Abfragen. RLS ist auch hier aktiviert.
 - pg-boss legt sein eigenes Schema `pgboss` an. Es wird nicht über Drizzle verwaltet.
 
 ---

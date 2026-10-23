@@ -16,7 +16,7 @@ describe('Notebooks endpoints', () => {
   let app: INestApplication;
 
   async function start(maxNotebooksPerUser?: number): Promise<void> {
-    ({ app } = await createNotebooksTestApp(maxNotebooksPerUser));
+    ({ app } = await createNotebooksTestApp({ maxNotebooksPerUser }));
   }
 
   function api(): ReturnType<typeof request.agent> {

@@ -1,4 +1,4 @@
-import type { SeedEnv } from './seed-env';
+import type { Env } from '../../config/env.schema';
 
 export interface SeedTarget {
   /** Host of `DATABASE_URL`, without user, password or database name. */
@@ -25,7 +25,7 @@ function databaseProjectRef(databaseUrl: URL): string | null {
  * Supabase projects: the demo user would be created in one project and its
  * notebook in another, where the foreign key to `auth.users` cannot hold.
  */
-export function resolveSeedTarget(env: Pick<SeedEnv, 'DATABASE_URL' | 'SUPABASE_URL'>): SeedTarget {
+export function resolveSeedTarget(env: Pick<Env, 'DATABASE_URL' | 'SUPABASE_URL'>): SeedTarget {
   const databaseUrl = new URL(env.DATABASE_URL);
   const supabaseUrl = new URL(env.SUPABASE_URL);
 
