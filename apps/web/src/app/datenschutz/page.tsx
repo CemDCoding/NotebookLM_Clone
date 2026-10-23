@@ -5,7 +5,7 @@ import { LegalSection } from '@/features/legal/legal-section';
 import { OperatorAddress } from '@/features/legal/operator-address';
 
 export const metadata: Metadata = {
-  title: 'Datenschutz · Quellenchat',
+  title: 'Datenschutz',
 };
 
 // Keep this text in sync with the actual processing (CLAUDE.md section 7, "DSGVO"):

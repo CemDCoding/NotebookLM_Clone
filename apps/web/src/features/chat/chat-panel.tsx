@@ -83,6 +83,7 @@ export function ChatPanel({ notebookId }: ChatPanelProps) {
           >
             <ModelPicker
               models={models.data}
+              isError={models.isError}
               value={modelId}
               onValueChange={setSelectedModel}
               disabled={isStreaming}

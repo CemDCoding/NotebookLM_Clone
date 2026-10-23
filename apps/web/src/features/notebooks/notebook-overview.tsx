@@ -1,6 +1,6 @@
 'use client';
 
-import { NotebookPen, RotateCw } from 'lucide-react';
+import { NotebookPen, RotateCw, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotebookCard } from './notebook-card';
 import { NotebookGridSkeleton } from './notebook-grid-skeleton';
@@ -18,6 +18,9 @@ export function NotebookOverview() {
   if (notebooks.isError) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center">
+        <span className="flex size-12 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 text-destructive">
+          <TriangleAlert aria-hidden="true" className="size-6" />
+        </span>
         <p role="alert" className="max-w-md text-muted-foreground">
           Deine Notebooks konnten nicht geladen werden. {toErrorMessage(notebooks.error)}
         </p>

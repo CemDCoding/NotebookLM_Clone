@@ -1,6 +1,6 @@
 'use client';
 
-import { MessagesSquare, RotateCw } from 'lucide-react';
+import { MessagesSquare, RotateCw, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -63,9 +63,13 @@ export function MessageList({ history, stream, showStream, runId }: MessageListP
         </div>
       )}
 
+      {/* Unlike the empty state not full height: a question asked meanwhile still shows below. */}
       {history.isError && (
-        <div className="flex flex-col items-center gap-4 px-4 py-10 text-center">
-          <p role="alert" className="text-sm text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+          <span className="flex size-12 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 text-destructive">
+            <TriangleAlert aria-hidden="true" className="size-6" />
+          </span>
+          <p role="alert" className="max-w-md text-sm text-muted-foreground">
             Der Chatverlauf konnte nicht geladen werden. {toErrorMessage(history.error)}
           </p>
           <Button
