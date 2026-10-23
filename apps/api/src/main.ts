@@ -1,13 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AppConfigService, EnvValidationError, loadEnv } from './config';
-
-// Pasted text may have 500,000 characters; 2 MB covers that even with multi-byte
-// characters, while Express' default of 100 KB would reject it (apps/api/CLAUDE.md "Body-Limits").
-const JSON_BODY_LIMIT = '2mb';
+import { configureHttpApp } from './http-app';
 
 const logger = new Logger('Bootstrap');
 
@@ -16,20 +12,12 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(env));
   const config = app.get(AppConfigService);
 
-  // Railway forwards requests through one proxy hop. Trusting exactly that hop makes
-  // `req.ip` the client address, which the per-IP throttler keys on, while a client
-  // still cannot spoof it with its own X-Forwarded-For header.
-  app.set('trust proxy', 1);
-  app.use(helmet());
-  app.enableCors({
-    origin: config.webOrigin,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
-    // Lets the web app read the request ID, so an error message can show it for support.
-    exposedHeaders: ['X-Request-Id'],
-  });
-  app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
-  app.enableShutdownHooks();
+  configureHttpApp(app, config);
+  // By default Nest re-raises the signal after the shutdown hooks. Started with
+  // `exec` on Railway, Node may run as PID 1, and the kernel ignores a re-raised
+  // SIGTERM there. Exiting explicitly ends the process with code 0 either way
+  // (docs/security-checklist.md, shutdown).
+  app.enableShutdownHooks([], { useProcessExit: true });
 
   await app.listen(config.port);
   logger.log(`API listening on port ${config.port} (RUN_MODE=${config.runMode})`);

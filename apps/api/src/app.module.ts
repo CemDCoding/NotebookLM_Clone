@@ -26,8 +26,7 @@ import { StorageModule } from './storage/storage.module';
 // Coarse flood protection per IP, in memory (PE-28). The business limits are
 // counted in the database and apply on top of this. The German 429 message
 // comes from the global exception filter.
-const THROTTLE_TTL_MS = 60_000;
-const THROTTLE_LIMIT = 120;
+export const IP_THROTTLE = { ttl: 60_000, limit: 120 } as const;
 
 // Feature modules by RUN_MODE. Later milestones register their modules here.
 // The worker needs the database too and still answers `/health` for Railway.
@@ -52,9 +51,7 @@ export class AppModule implements NestModule {
       module: AppModule,
       imports: [
         AppConfigModule.forRoot(env),
-        ThrottlerModule.forRoot({
-          throttlers: [{ ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT }],
-        }),
+        ThrottlerModule.forRoot({ throttlers: [IP_THROTTLE] }),
         ...selectModules(env.RUN_MODE, RUN_MODE_MODULES),
       ],
       providers: [
