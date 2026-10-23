@@ -16,12 +16,13 @@ Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer samme
 
 ## Projektstand
 
-**Meilenstein M4 (Chat mit Zitaten) ist live, der Kernfluss funktioniert vollständig.** Live sind:
+**Meilenstein M5 (Feinschliff) ist live, der Funktionsumfang ist vollständig.** Live sind:
 - Login mit dem Demo-Account, Notebooks anlegen, umbenennen und löschen,
 - Quellen als PDF, TXT/Markdown oder eingefügter Text, mit Verarbeitung im Hintergrund und sichtbarem Status,
-- der Chat mit gestreamten Antworten auf Deutsch, prüfbaren Zitaten, Modellwahl und gespeichertem Verlauf.
+- der Chat mit gestreamten Antworten auf Deutsch, prüfbaren Zitaten, Modellwahl und gespeichertem Verlauf,
+- der Datenexport als JSON unter „Einstellungen“ sowie gestaltete Lade-, Leer- und Fehlerzustände.
 
-Noch nicht live ist der Datenexport als JSON. Er folgt mit M5 (Feinschliff), zusammen mit der Politur aller Lade-, Leer- und Fehlerzustände. Außerdem enthält das Repository Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
+Abgesichert ist das durch Unit-, Service- und Sicherheitstests, einen Playwright-E2E-Test für den Hauptfluss und ein Sicherheits-Audit mit Live-Checkliste ([`docs/security-checklist.md`](docs/security-checklist.md)). Außerdem enthält das Repository Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
 
 Dieser Abschnitt wird mit jedem Deployment aktualisiert.
 
@@ -31,7 +32,7 @@ Dieser Abschnitt wird mit jedem Deployment aktualisiert.
 
 | | |
 |---|---|
-| **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) (aktuell Stand M4: Login, Notebooks, Quellen und Chat mit Zitaten) |
+| **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) (aktuell Stand M5: vollständiger Funktionsumfang) |
 | **Loom-Video** | _folgt zur Abgabe_ |
 | **Zugang** | Die Zugangsdaten zum Demo-Account stehen in der Bewerbungs-Mail. Eine Registrierung ist bewusst nicht vorgesehen ([warum](#bewusste-abwägungen)). |
 
@@ -41,7 +42,7 @@ Dieser Abschnitt wird mit jedem Deployment aktualisiert.
 
 ## Funktionen
 
-_Live seit M4, nur der JSON-Export folgt mit M5, siehe [Projektstand](#projektstand)._
+_Alle Funktionen sind live, siehe [Projektstand](#projektstand)._
 
 - **Notebooks** anlegen, umbenennen und löschen
 - **Quellen** hinzufügen: PDF, TXT/Markdown oder eingefügter Text, mit sichtbarem Verarbeitungsstatus

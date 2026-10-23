@@ -93,7 +93,7 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M5-OPS-01 | Playwright-E2E-Test | M5 | OPS | W1 | M4-DEP-01, H-11 | M | fertig |
 | M5-API-02 | Datenexport `GET /me/export` | M5 | API | W2 | M5-SH-01, M5-API-01 | M | fertig |
 | M5-WEB-02 | Einstellungen und Export | M5 | WEB | W2 | M5-SH-01, M5-WEB-01 | S | fertig |
-| M5-DEP-01 | Deployment M5 | M5 | HUM | W3 | alle M5 | H | offen |
+| M5-DEP-01 | Deployment M5 | M5 | HUM | W3 | alle M5 | H | fertig |
 | M6-OPS-01 | README finalisieren | M6 | OPS | W1 | M5-DEP-01 | M | offen |
 | M6-OPS-02 | ADR 0004 und ADR-Review | M6 | OPS | W1 | M5-DEP-01 | M | offen |
 | M6-OPS-03 | KI-Workflow und Devlog vervollständigen | M6 | OPS | W1 | M5-DEP-01 | S | offen |

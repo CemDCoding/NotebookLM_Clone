@@ -260,3 +260,32 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 
 **Nächster Schritt**
 - M5, Welle 1.
+
+## 2026-10-23 (Abend) – Feinschliff und Deployment M5
+
+**Meilenstein:** M5 komplett, live auf `5369c11`. M5-DEP-01 fertig
+
+**Umgesetzt (M5-W1: M5-SH-01, M5-API-01, M5-WEB-01, M5-OPS-01)**
+- Export-Vertrag in `packages/shared`: Notebooks, Quellen-Metadaten und Nachrichten. Zitate nur als Referenzen, ohne Quelltext, Chunks oder Embeddings. Unbekannte Felder werden verworfen.
+- Sicherheits-Audit gegen `CLAUDE.md §7` mit `docs/security-checklist.md`. Ergebnis: keine Lücke im Verhalten, aber Lücken in den Nachweisen, jetzt geschlossen. Ein zentraler Test prüft das tatsächlich erzeugte SQL jeder Repository-Methode auf den `user_id`-Filter, ohne Datenbank. Dazu Tests für Helmet, CORS, Body-Limit, Throttler, RLS, „nur `/health` öffentlich“ und inhaltsfreie Chat-Logs.
+- Fehler- und 404-Seiten, Ladezustände, Fehlerzustand im Modell-Picker, einheitliche Seitentitel.
+- Ein Playwright-E2E-Test für den Hauptfluss: Login, Notebook, Text-Quelle, Frage, Zitat, Aufräumen.
+
+**Umgesetzt (M5-W2: M5-API-02, M5-WEB-02)**
+- `GET /me/export` liest alles in einer Read-only-Transaktion, prüft gegen das Schema und liefert mit `Cache-Control: no-store` aus. Die Einstellungsseite lädt den Export als `quellenchat-export-<datum>.json` herunter. Den Dateinamen erzeugt der Browser, weil CORS `Content-Disposition` nicht freigibt. Der Name nutzt bewusst „Quellenchat“ statt der Marke (§1).
+- Am Integrationspunkt nachgetragen: Der Export steht im zentralen Mandanten-Test. Gegenprobe: Ohne den `user_id`-Filter wird der Test rot.
+
+**Deployment**
+- Railway startet die API jetzt mit `exec node dist/main`, dazu `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=20`. Vorher kam `SIGTERM` durch pnpm und die `&&`-Kette nicht beim Node-Prozess an (Audit, Abschnitt 3.1). Nachweis nach einem Redeploy: Im Log der alten Instanz stehen `Stopping pg-boss` mit `SIGTERM` und `pg-boss stopped` nach 22 ms. Damit ist der offene Punkt vom Mittag erledigt.
+- Smoke-Test mit der Live-Checkliste des Audits: `401` ohne bzw. mit ungültigem Token, `404` für fremde oder unbekannte Notebooks. Helmet-Header ohne `X-Powered-By`, CORS nur für die eigene Domain, `X-Request-Id`. `413` für JSON über 2 MB und Dateien über 10 MB. Rate-Limit: 240 × `200`, danach `429` mit `Retry-After`. Supabase-REST mit dem publishable Key liefert 0 Zeilen, die Registrierung wird abgelehnt, eine echte Storage-Datei ist über die öffentliche URL nicht erreichbar. Markerwörter aus Frage und Quelle stehen nicht in den Railway-Logs. Nach dem Löschen bleiben `usage_events` gleich, und es gibt keine verwaisten Dateien. Der Export enthält Frage, Antwort und Zitat-Referenz, aber keinen Quelltext. Leer-, Lade- und Fehlerzustände sind live sichtbar. Das Chat-Stundenlimit, lokal auf 2 gesetzt, greift mit verständlicher Meldung. Keine Demo-Zugangsdaten im Web-Bundle.
+- Danach Prod-Seed aus einem Worktree auf `5369c11`, für frische Demo-Daten.
+
+**Probleme und Erkenntnisse**
+- Beim Umstellen landete der neue Startbefehl zuerst im Feld für den Build-Befehl. Der Build scheiterte, weil `packages/shared` nicht gebaut war. Die alte Version blieb live, die Korrektur war ein Feldwechsel.
+- Der E2E-Test lief im Agent nie wirklich: Für Playwright 1.64 fehlte der passende Chromium. Chromium liegt jetzt unter `D:\DevCache\ms-playwright` (`PLAYWRIGHT_BROWSERS_PATH`), README und `CLAUDE.md` nennen den einmaligen Installationsschritt.
+- KI-Fehler: Claude hat beim Review der Worktrees `git add -N` ausgeführt. Das ist ein schreibender Git-Befehl und gegen die Projektregel. Folgen hatte es keine, die Dateien waren nur vorgemerkt. Seitdem werden neue Dateien nur noch per `git ls-files --others` und `cat` gelesen.
+- KI-Fehler: Ein beendeter Hintergrundprozess ließ den Prozessbaum von `pnpm dev` weiterlaufen. Die Portprüfung meldete trotzdem „frei“, weil Windows auf Deutsch `ABHÖREN` statt `LISTEN` ausgibt. Seitdem wird der ganze Prozessbaum beendet und nach beiden Wörtern gesucht.
+
+**Nächster Schritt**
+- M6: README finalisieren, ADR 4, KI-Workflow und Devlog vervollständigen, danach Screenshot, Loom-Video und Abgabe.
+- Für M6-OPS-03 vormerken: Für die M4-Arbeit auf `dev` fehlt noch ein eigener Devlog-Eintrag.
