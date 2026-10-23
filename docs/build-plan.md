@@ -78,14 +78,14 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M3-DEP-01 | Deployment M3 | M3 | HUM | W4 | alle M3 | H | offen |
 | M4-SH-01 | Chat-Verträge | M4 | SH | W1 | M3-DEP-01 | M | fertig |
 | M4-API-01 | Gerüst M4: Schema `messages`, Modul-Stubs | M4 | API | W1 | M3-DEP-01 | S | fertig |
-| M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | in Arbeit |
-| M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | in Arbeit |
-| M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | in Arbeit |
-| M4-API-05 | Chat-Limits | M4 | API | W2 | M4-API-01 | S | in Arbeit |
-| M4-WEB-01 | SSE-Client und Stream-Hook | M4 | WEB | W2 | M4-SH-01 | M | in Arbeit |
-| M4-WEB-02 | Antwort-Rendering und Zitate | M4 | WEB | W2 | M4-SH-01 | L | in Arbeit |
-| M4-API-06 | Chat-Service, SSE-Endpunkt und Verlauf | M4 | API | W3 | M4-API-02 bis M4-API-05 | L | offen |
-| M4-WEB-03 | Chat-Panel | M4 | WEB | W3 | M4-WEB-01, M4-WEB-02 | L | offen |
+| M4-API-02 | Chat-Provider, Modell-Registry, `GET /models` | M4 | API | W2 | M4-API-01, M4-SH-01 | M | fertig |
+| M4-API-03 | Retrieval | M4 | API | W2 | M4-API-01 | M | fertig |
+| M4-API-04 | Prompt-Aufbau und Zitat-Zuordnung | M4 | API | W2 | M4-API-01, M4-SH-01 | M | fertig |
+| M4-API-05 | Chat-Limits | M4 | API | W2 | M4-API-01 | S | fertig |
+| M4-WEB-01 | SSE-Client und Stream-Hook | M4 | WEB | W2 | M4-SH-01 | M | fertig |
+| M4-WEB-02 | Antwort-Rendering und Zitate | M4 | WEB | W2 | M4-SH-01 | L | fertig |
+| M4-API-06 | Chat-Service, SSE-Endpunkt und Verlauf | M4 | API | W3 | M4-API-02 bis M4-API-05 | L | fertig |
+| M4-WEB-03 | Chat-Panel | M4 | WEB | W3 | M4-WEB-01, M4-WEB-02 | L | fertig |
 | M4-DEP-01 | Deployment M4 | M4 | HUM | W4 | alle M4, H-10 (optional) | H | offen |
 | M5-SH-01 | Export-Vertrag | M5 | SH | W1 | M4-DEP-01 | S | offen |
 | M5-API-01 | Sicherheits- und Limit-Audit | M5 | API | W1 | M4-DEP-01 | M | offen |
