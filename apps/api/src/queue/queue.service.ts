@@ -83,10 +83,15 @@ export class QueueService implements OnModuleInit, BeforeApplicationShutdown {
 
   /**
    * Runs before the database pool closes in `onApplicationShutdown`, so
-   * running jobs can still finish their writes.
+   * running jobs can still finish their writes. Both log lines are the proof
+   * in the Railway log that a redeploy's SIGTERM reached the Node process and
+   * pg-boss stopped in time (docs/security-checklist.md).
    */
-  async beforeApplicationShutdown(): Promise<void> {
+  async beforeApplicationShutdown(signal?: string): Promise<void> {
+    const startedAt = Date.now();
+    this.logger.log({ message: 'Stopping pg-boss', signal: signal ?? 'none' });
     await this.boss.stop({ graceful: true, timeout: STOP_TIMEOUT_MS });
+    this.logger.log({ message: 'pg-boss stopped', durationMs: Date.now() - startedAt });
   }
 
   /** Enqueues the ingestion of a new source. A second job for the same source is dropped. */

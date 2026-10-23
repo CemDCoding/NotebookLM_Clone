@@ -124,6 +124,24 @@ describe('QueueService', () => {
 
       expect(boss.stop).toHaveBeenCalledWith({ graceful: true, timeout: 10_000 });
     });
+
+    // The two lines are the evidence in the Railway log that SIGTERM reached
+    // Node and the stop finished (docs/security-checklist.md).
+    it('logs the signal before the stop and the duration once pg-boss has stopped', async () => {
+      const { service, boss } = createService('all');
+      const log = vi.mocked(Logger.prototype.log);
+      boss.stop.mockImplementation(() => {
+        expect(log).toHaveBeenCalledTimes(1);
+        return Promise.resolve();
+      });
+
+      await service.beforeApplicationShutdown('SIGTERM');
+
+      expect(log.mock.calls).toEqual([
+        [{ message: 'Stopping pg-boss', signal: 'SIGTERM' }],
+        [{ message: 'pg-boss stopped', durationMs: expect.any(Number) as number }],
+      ]);
+    });
   });
 
   describe('enqueueIngestion', () => {

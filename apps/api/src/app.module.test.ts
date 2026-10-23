@@ -1,7 +1,9 @@
-import { MODULE_METADATA } from '@nestjs/common/constants';
+import { METHOD_METADATA, MODULE_METADATA, ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { describe, expect, it } from 'vitest';
 import { RUN_MODE_MODULES } from './app.module';
 import { ChatModule } from './chat/chat.module';
+import { IS_PUBLIC_KEY } from './common/decorators';
 import { type ModuleImport, type RunMode, selectModules } from './config';
 import { HealthController } from './health/health.controller';
 import { IngestionModule } from './ingestion/ingestion.module';
@@ -113,4 +115,79 @@ describe('RUN_MODE_MODULES', () => {
       expect(providersOf(modulesFor(runMode))).toContain(UsageCleanupJob);
     },
   );
+});
+
+type ControllerClass = abstract new (...args: never[]) => object;
+
+interface RouteArgument {
+  index: number;
+  schema?: unknown;
+}
+
+/** Every route handler of a controller: the prototype methods carrying an HTTP method. */
+function routeHandlers(controller: ControllerClass): [string, object][] {
+  const prototype = controller.prototype as Record<string, unknown>;
+  return Object.getOwnPropertyNames(prototype)
+    .filter((name) => name !== 'constructor')
+    .map((name): [string, unknown] => [name, prototype[name]])
+    .filter((entry): entry is [string, object] => {
+      const handler = entry[1];
+      return typeof handler === 'function' && Reflect.hasMetadata(METHOD_METADATA, handler);
+    });
+}
+
+// Every controller of every mode; `all` loads the union of `api` and `worker`.
+const ALL_CONTROLLERS = [...new Set(controllersOf(modulesFor('all')))] as ControllerClass[];
+
+// Central route audit (CLAUDE.md section 7): a new controller cannot slip past
+// the auth guard or the validation pipe without breaking one of these tests.
+describe('Routes of all controllers', () => {
+  // A new controller has to be added here, which puts it in front of the two audits below.
+  it('finds the controllers of every feature module', () => {
+    expect(ALL_CONTROLLERS.map((controller) => controller.name).sort()).toEqual([
+      'ChatController',
+      'HealthController',
+      'ModelsController',
+      'NotebooksController',
+      'SourcesController',
+    ]);
+  });
+
+  it('keeps every route behind the JWT guard except GET /health', () => {
+    const publicRoutes = ALL_CONTROLLERS.flatMap((controller) => {
+      const classIsPublic = Reflect.getMetadata(IS_PUBLIC_KEY, controller) === true;
+      return routeHandlers(controller)
+        .filter(([, handler]) => classIsPublic || Reflect.getMetadata(IS_PUBLIC_KEY, handler))
+        .map(([name]) => `${controller.name}.${name}`);
+    });
+
+    expect(publicRoutes).toEqual(['HealthController.check']);
+  });
+
+  // The global pipe validates only arguments that name a schema; any other
+  // body, query or param would reach the service unchecked.
+  it('declares a Zod schema for every body, query and path parameter', () => {
+    const validated = new Set<string>([
+      String(RouteParamtypes.BODY),
+      String(RouteParamtypes.QUERY),
+      String(RouteParamtypes.PARAM),
+    ]);
+    const inputs = ALL_CONTROLLERS.flatMap((controller) =>
+      routeHandlers(controller).flatMap(([name]) => {
+        const args = (Reflect.getMetadata(ROUTE_ARGS_METADATA, controller, name) ?? {}) as Record<
+          string,
+          RouteArgument
+        >;
+        return Object.entries(args)
+          .filter(([key]) => validated.has(key.split(':')[0] ?? ''))
+          .map(([, arg]) => ({ route: `${controller.name}.${name}#${arg.index}`, arg }));
+      }),
+    );
+
+    // Guards against a vacuous pass if Nest ever moves its metadata.
+    expect(inputs.length).toBeGreaterThan(10);
+    expect(inputs.filter(({ arg }) => arg.schema === undefined).map(({ route }) => route)).toEqual(
+      [],
+    );
+  });
 });
