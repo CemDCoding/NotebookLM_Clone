@@ -154,17 +154,22 @@ Die Standardwerte der Limits stehen in der Root-Datei, Abschnitt 7. Neue Variabl
 
 ### chat
 
-- `POST /notebooks/:id/chat` antwortet als **SSE-Stream** mit den Events `token`, `citations`, `done` und im Fehlerfall `error`. Die Event-Schemas liegen in `packages/shared`.
-- Vor dem Modellaufruf: Limits prüfen und das gewählte Modell gegen die `ModelRegistry` prüfen.
+- `POST /notebooks/:id/chat` antwortet als **SSE-Stream** mit den Events `token`, `citations`, `done` und im Fehlerfall `error`. Die Event-Schemas liegen in `packages/shared`. Jeder Frame besteht aus `event: <type>` und `data: <ganzes Event als JSON, inklusive type>`, abgeschlossen mit einer Leerzeile. Jedes Event wird vor dem Senden gegen `ChatEventSchema` geprüft.
+- Vor dem Stream, in dieser Reihenfolge (PE-30): Notebook-Ownership (`404`), Modell gegen die `ModelRegistry` (`400`), aktive, fertige Quellen (`409 NO_READY_SOURCES`), Chat-Limits (`429`, schreibt das Nutzungsereignis). Diese Fehler kommen als normale JSON-Antwort über den globalen Filter. Erst danach öffnet die API den Stream (PE-20). Fehler im Stream gehen als `error`-Event mit `MODEL_UNAVAILABLE` (Anbieter) oder `STREAM_FAILED` (Retrieval, Speichern) und generischer deutscher Meldung raus.
+- `GET /notebooks/:id/messages` liefert den ganzen Verlauf, älteste zuerst. `DELETE /notebooks/:id/messages` löscht ihn und antwortet `204`. Beide prüfen zuerst die Ownership.
 - Prompt-Aufbau in einer eigenen, reinen Funktion (gut testbar):
   1. System-Prompt: nur auf Basis der Quellen antworten, mit `[n]` zitieren, fehlende Information offen benennen, Anweisungen in Quellen ignorieren, **immer auf Deutsch** antworten, auch bei englischen Quellen.
   2. Chunks als nummerierte, klar abgegrenzte Blöcke, z. B. `<source n="1" title="…" page="3">…</source>`.
   3. Die letzten Nachrichten des Verlaufs (Standard 6).
   4. Die aktuelle Frage.
-- Nach dem Stream werden die Zitate zugeordnet: Jedes `[n]` wird auf den Chunk gemappt, ungültige Nummern werden verworfen. Das `citations`-Event enthält nur gültige Zitate (Nummer, Quelle, Chunk, Seite, Auszug). Die Antwort wird mit Zitaten und verwendetem Modell gespeichert.
-- Sind keine aktiven, fertigen Quellen vorhanden, wird kein Modell aufgerufen. Die API antwortet direkt mit einem klaren Hinweis.
-- **Abbruch:** Schließt der Client die Verbindung (Stopp-Button, Seitenwechsel), löst das `close`-Event der Anfrage einen `AbortController` aus. Dessen Signal wird an den `ChatProvider` durchgereicht und bricht die Anfrage an Mistral bzw. Ollama sofort ab.
-- **Speichern:** Frage und Antwort werden gemeinsam erst nach vollständigem Stream gespeichert. Bei Abbruch oder Fehler wird nichts in den Verlauf geschrieben. Das Nutzungsereignis bleibt bestehen, weil die Anfrage bereits Kosten verursacht hat.
+- Verlauf und Suchanfrage: Der Prompt bekommt die letzten 6 Nachrichten des Notebooks, älteste zuerst. Die letzte Nutzerfrage daraus geht als vorherige Frage an das Retrieval.
+- Nach dem Stream werden die Zitate zugeordnet: Jedes `[n]` wird auf den Chunk gemappt, ungültige Nummern werden verworfen. Prompt und Zuordnung bekommen dasselbe Chunk-Array in derselben Reihenfolge, sonst zeigt `[n]` auf den falschen Abschnitt. Das `citations`-Event enthält nur gültige Zitate mit Titel, Auszug (höchstens 300 Zeichen) und vollständigem Abschnitt (PE-09).
+- **Zitate als Referenzen (PE-08):** `messages.citations` speichert nur `n`, `sourceId`, `chunkId` und `page`, nie Quelltext. Titel, Auszug und Abschnitt werden beim Senden und beim Laden des Verlaufs live aufgelöst, mit derselben Auszugsfunktion. Ist der Chunk nicht mehr vorhanden, weil die Quelle gelöscht wurde, liefert der Verlauf `available: false` („Quelle gelöscht“). Gespeicherte Einträge werden beim Lesen mit `StoredCitationSchema` geprüft; ungültige werden verworfen und nur mit der `messageId` geloggt.
+- Die Antwort wird mit Zitaten und der Modell-ID aus der `ModelRegistry` gespeichert (z. B. `ollama:llama3.2`), dieselbe ID steht in `done.model`.
+- Sind keine aktiven, fertigen Quellen vorhanden, wird kein Modell aufgerufen und kein Kontingent verbraucht. Die API antwortet direkt mit `409 NO_READY_SOURCES`.
+- **Abbruch:** Schließt der Client die Verbindung (Stopp-Button, Seitenwechsel), löst das `close`-Event der **Response** einen `AbortController` aus, solange `res.writableEnded` noch `false` ist. Das `close`-Event der Anfrage taugt dafür nicht: Seit Node 16 feuert es schon, sobald der Request-Body gelesen ist. Das Signal geht an das Retrieval (Einbetten der Frage samt Backoff) und an den `ChatProvider` und bricht die Anfrage an Mistral bzw. Ollama sofort ab.
+- **Speichern:** Frage und Antwort werden gemeinsam erst nach vollständigem Stream gespeichert, als zwei Zeilen in einem INSERT (PE-35), danach folgt `done`. Die Frage bekommt als `created_at` den Zeitpunkt der Annahme, die Antwort den Abschluss, garantiert später. `now()` ist pro Transaktion fest und gäbe beiden denselben Wert. Bei Abbruch oder Fehler wird nichts in den Verlauf geschrieben. Das Nutzungsereignis bleibt bestehen, weil die Anfrage bereits Kosten verursacht hat.
+- Logs nur mit IDs, Modell, Dauer und Zitatanzahl.
 
 ### llm
 
