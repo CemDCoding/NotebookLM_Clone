@@ -91,8 +91,8 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M5-API-01 | Sicherheits- und Limit-Audit | M5 | API | W1 | M4-DEP-01 | M | fertig |
 | M5-WEB-01 | Zustände und Design-Politur | M5 | WEB | W1 | M4-DEP-01 | L | fertig |
 | M5-OPS-01 | Playwright-E2E-Test | M5 | OPS | W1 | M4-DEP-01, H-11 | M | fertig |
-| M5-API-02 | Datenexport `GET /me/export` | M5 | API | W2 | M5-SH-01, M5-API-01 | M | offen |
-| M5-WEB-02 | Einstellungen und Export | M5 | WEB | W2 | M5-SH-01, M5-WEB-01 | S | offen |
+| M5-API-02 | Datenexport `GET /me/export` | M5 | API | W2 | M5-SH-01, M5-API-01 | M | in Arbeit |
+| M5-WEB-02 | Einstellungen und Export | M5 | WEB | W2 | M5-SH-01, M5-WEB-01 | S | in Arbeit |
 | M5-DEP-01 | Deployment M5 | M5 | HUM | W3 | alle M5 | H | offen |
 | M6-OPS-01 | README finalisieren | M6 | OPS | W1 | M5-DEP-01 | M | offen |
 | M6-OPS-02 | ADR 0004 und ADR-Review | M6 | OPS | W1 | M5-DEP-01 | M | offen |
@@ -1631,7 +1631,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Nicht anfassen:** andere Module
 - **Umsetzung:**
   1. `AccountRepository` liest Notebooks, Quellen und Nachrichten des Nutzers.
-  2. Das Ergebnis wird gegen `ExportSchema` geprüft und mit `Content-Disposition: attachment; filename="notebooklm-export-<datum>.json"` ausgeliefert.
+  2. Das Ergebnis wird gegen `ExportSchema` geprüft und mit `Content-Disposition: attachment; filename="quellenchat-export-<datum>.json"` (öffentlicher Name, `CLAUDE.md §1`) ausgeliefert.
 - **Schnittstellen:** nutzt `ExportSchema`
 - **Akzeptanzkriterien:** Der Export enthält nur Daten des angemeldeten Nutzers und entspricht dem Schema.
 - **Tests:** Service-Test mit Fake-Repository (fremde Daten fehlen, Schema gültig)
@@ -1649,7 +1649,7 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Parallel möglich mit:** M5-API-02
 - **Dateien (Eigentum):** `apps/web/src/app/(app)/settings/**`, `apps/web/src/features/account/**`, `apps/web/src/app/(app)/layout.tsx` (Navigationslink)
 - **Nicht anfassen:** andere Features
-- **Umsetzung:** Ein Button „Meine Daten exportieren“ lädt per `apiFetch` (Blob) die Datei herunter. Zustände für Laden und Fehler. Ein Hinweis „Zum Löschen deines Accounts wende dich an den Betreiber“.
+- **Umsetzung:** Ein Button „Meine Daten exportieren“ lädt per `apiFetch` (Blob) die Datei herunter. Den Dateinamen `quellenchat-export-<datum>.json` erzeugt der Browser selbst, weil CORS den Header `Content-Disposition` nicht freigibt (nur `X-Request-Id`). Zustände für Laden und Fehler. Ein Hinweis „Zum Löschen deines Accounts wende dich an den Betreiber“.
 - **Schnittstellen:** nutzt `ExportSchema`
 - **Akzeptanzkriterien:** Der Download funktioniert, der Fehlerzustand wird angezeigt.
 - **Tests:** RTL: Button löst den Download aus (gemockt), Fehlerzustand
