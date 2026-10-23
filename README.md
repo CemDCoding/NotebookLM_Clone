@@ -16,13 +16,14 @@ Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer samme
 
 ## Projektstand
 
-**Meilenstein M0 (Fundament) ist live.** Live sind:
-- die Startseite mit Impressum und Datenschutzerklärung auf Vercel,
-- die API auf Railway (EU), deren Health-Check die Verbindung zur Datenbank in Frankfurt meldet.
+**Meilenstein M4 (Chat mit Zitaten) ist live, der Kernfluss funktioniert vollständig.** Live sind:
+- Login mit dem Demo-Account, Notebooks anlegen, umbenennen und löschen,
+- Quellen als PDF, TXT/Markdown oder eingefügter Text, mit Verarbeitung im Hintergrund und sichtbarem Status,
+- der Chat mit gestreamten Antworten auf Deutsch, prüfbaren Zitaten, Modellwahl und gespeichertem Verlauf.
 
-Anmeldung und Fachfunktionen gibt es noch nicht, der Button „Anmelden“ führt bis M1 ins Leere. Außerdem enthält das Repository Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
+Noch nicht live ist der Datenexport als JSON. Er folgt mit M5 (Feinschliff), zusammen mit der Politur aller Lade-, Leer- und Fehlerzustände. Außerdem enthält das Repository Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
 
-Die Liste unter [Funktionen](#funktionen) beschreibt den **Zielumfang**. Sie gilt als umgesetzt, sobald Meilenstein M4 (Chat mit Zitaten) live ist. Dieser Abschnitt wird mit jedem Deployment aktualisiert.
+Dieser Abschnitt wird mit jedem Deployment aktualisiert.
 
 ---
 
@@ -30,7 +31,7 @@ Die Liste unter [Funktionen](#funktionen) beschreibt den **Zielumfang**. Sie gil
 
 | | |
 |---|---|
-| **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) (aktuell Stand M0: Startseite, Anmeldung folgt mit M1) |
+| **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) (aktuell Stand M4: Login, Notebooks, Quellen und Chat mit Zitaten) |
 | **Loom-Video** | _folgt zur Abgabe_ |
 | **Zugang** | Die Zugangsdaten zum Demo-Account stehen in der Bewerbungs-Mail. Eine Registrierung ist bewusst nicht vorgesehen ([warum](#bewusste-abwägungen)). |
 
@@ -40,7 +41,7 @@ Die Liste unter [Funktionen](#funktionen) beschreibt den **Zielumfang**. Sie gil
 
 ## Funktionen
 
-_Zielumfang – noch nicht live, siehe [Projektstand](#projektstand)._
+_Live seit M4, nur der JSON-Export folgt mit M5, siehe [Projektstand](#projektstand)._
 
 - **Notebooks** anlegen, umbenennen und löschen
 - **Quellen** hinzufügen: PDF, TXT/Markdown oder eingefügter Text, mit sichtbarem Verarbeitungsstatus
