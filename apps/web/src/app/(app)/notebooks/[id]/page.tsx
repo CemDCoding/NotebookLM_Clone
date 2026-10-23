@@ -6,7 +6,7 @@ import { SourcePanel } from '@/features/sources/source-panel';
 import { NotebookHeader } from './notebook-header';
 
 export const metadata: Metadata = {
-  title: 'Notebook – Quellenchat',
+  title: 'Notebook',
 };
 
 // Notebook, sources and chat are fetched in the browser: apiFetch needs the session's access

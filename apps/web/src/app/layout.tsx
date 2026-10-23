@@ -21,7 +21,8 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: 'Quellenchat',
+  // Pages set only their own name; the template appends the app name the same way everywhere.
+  title: { default: 'Quellenchat', template: '%s – Quellenchat' },
   description: 'Sprich mit deinen eigenen Dokumenten. Jede Antwort mit prüfbaren Zitaten belegt.',
 };
 
