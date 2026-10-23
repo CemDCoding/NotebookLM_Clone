@@ -3,7 +3,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SOURCE_POLL_INTERVAL_MS, sourcesRefetchInterval, useSources } from './use-sources';
+import { chatKeys } from '@/features/chat/query-keys';
+import {
+  SOURCE_POLL_INTERVAL_MS,
+  sourcesRefetchInterval,
+  useDeleteSource,
+  useSources,
+} from './use-sources';
 
 const apiFetch = vi.hoisted(() => vi.fn());
 
@@ -46,6 +52,39 @@ describe('sourcesRefetchInterval', () => {
 
   it('polls every two seconds', () => {
     expect(SOURCE_POLL_INTERVAL_MS).toBe(2_000);
+  });
+});
+
+describe('useDeleteSource', () => {
+  const sourceId = '0b5d7c1e-1a2b-4c3d-8e4f-5a6b7c8d9e01';
+
+  function setup() {
+    apiFetch.mockReset();
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useDeleteSource(notebookId), { wrapper });
+    return { result, invalidate };
+  }
+
+  it('refreshes the chat history so citations of the deleted source update', async () => {
+    const { result, invalidate } = setup();
+    apiFetch.mockResolvedValue(undefined);
+
+    await act(() => result.current.mutateAsync(sourceId));
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: chatKeys.messages(notebookId) });
+  });
+
+  it('leaves the chat history alone when the deletion fails', async () => {
+    const { result, invalidate } = setup();
+    apiFetch.mockRejectedValue(new Error('boom'));
+
+    await act(() => result.current.mutateAsync(sourceId).catch(() => undefined));
+
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: chatKeys.messages(notebookId) });
   });
 });
 

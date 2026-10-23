@@ -6,6 +6,7 @@ import {
 } from '@notebooklm/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api-client';
+import { chatKeys } from '@/features/chat/query-keys';
 import { notebookKeys } from '@/features/notebooks/query-keys';
 import { retryUnlessNotFound } from './is-not-found-error';
 import { sourceKeys } from './query-keys';
@@ -85,12 +86,14 @@ export function useDeleteSource(notebookId: string) {
     mutationFn: (sourceId: string) =>
       apiFetch(sourcePath(notebookId, sourceId), { method: 'DELETE' }),
     // Returning the promise closes the dialog only once the list no longer shows the source.
-    // The notebook queries carry the source count, so they are refreshed as well.
+    // The notebook queries carry the source count, so they are refreshed as well. The chat
+    // history is refreshed so citations of the deleted source show as deleted without a reload.
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: sourceKeys.list(notebookId) }),
         queryClient.invalidateQueries({ queryKey: notebookKeys.list() }),
         queryClient.invalidateQueries({ queryKey: notebookKeys.detail(notebookId) }),
+        queryClient.invalidateQueries({ queryKey: chatKeys.messages(notebookId) }),
       ]),
   });
 }
