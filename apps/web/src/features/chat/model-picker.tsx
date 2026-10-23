@@ -13,9 +13,18 @@ import {
 interface ModelPickerProps {
   /** `undefined` while the list is loading or could not be loaded. */
   models: readonly Model[] | undefined;
+  /** The list could not be loaded; questions then go to the API's default model. */
+  isError?: boolean;
   value: string | undefined;
   onValueChange: (modelId: string) => void;
   disabled?: boolean;
+}
+
+function placeholderFor(isError: boolean, isLoading: boolean): string {
+  if (isError) {
+    return 'Standardmodell';
+  }
+  return isLoading ? 'Modelle werden geladen …' : 'Modell';
 }
 
 function ModelLabel({ model }: { model: Model }) {
@@ -32,8 +41,15 @@ function ModelLabel({ model }: { model: Model }) {
 }
 
 /** Chooses the model for the next answer from the models the API allows. */
-export function ModelPicker({ models, value, onValueChange, disabled }: ModelPickerProps) {
+export function ModelPicker({
+  models,
+  isError = false,
+  value,
+  onValueChange,
+  disabled,
+}: ModelPickerProps) {
   const selected = models?.find((model) => model.id === value);
+  const isLoading = models === undefined && !isError;
 
   return (
     <Select
@@ -43,7 +59,7 @@ export function ModelPicker({ models, value, onValueChange, disabled }: ModelPic
     >
       <SelectTrigger size="sm" aria-label="Modell" className="max-w-64">
         {/* Rendered explicitly so the trigger shows the label before the list was ever opened. */}
-        <SelectValue placeholder="Modell">
+        <SelectValue placeholder={placeholderFor(isError, isLoading)}>
           {selected && <ModelLabel model={selected} />}
         </SelectValue>
       </SelectTrigger>

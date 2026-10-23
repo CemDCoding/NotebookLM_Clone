@@ -280,6 +280,30 @@ describe('ChatPanel', () => {
         expect.objectContaining({ body: { question: 'Frage', model: 'ollama:llama3.2' } }),
       );
     });
+
+    it('falls back to the default model of the API when the list cannot be loaded', async () => {
+      const stream = nextStream();
+      const answerWithSources = apiFetch.getMockImplementation();
+      apiFetch.mockImplementation((path: string, options?: ApiRequestOptions) =>
+        path === '/models'
+          ? Promise.reject(new ApiError(0, 'Der Server ist gerade nicht erreichbar.'))
+          : answerWithSources?.(path, options),
+      );
+      renderPanel();
+      const user = userEvent.setup();
+
+      const picker = screen.getByRole('combobox', { name: 'Modell' });
+      await waitFor(() => expect(picker).toHaveTextContent('Standardmodell'));
+      expect(picker).toBeDisabled();
+
+      const input = screen.getByRole('textbox', { name: 'Frage' });
+      await waitFor(() => expect(input).toBeEnabled());
+      await user.type(input, 'Frage{Enter}');
+      await stream.ready;
+
+      const [, request] = apiFetchResponse.mock.calls[0] as [string, ApiRequestOptions];
+      expect(request.body).toEqual({ question: 'Frage' });
+    });
   });
 
   describe('streaming', () => {

@@ -1,6 +1,7 @@
-import { BookOpenText } from 'lucide-react';
+import { BookOpenText, Settings } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 import { LogoutButton } from '@/features/auth/logout-button';
 import { NOTEBOOKS_PATH } from '@/lib/supabase/route-access';
 
@@ -29,7 +30,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
               Quellen<span className="font-serif font-normal italic">chat</span>
             </span>
           </Link>
-          <LogoutButton />
+          <nav aria-label="Konto" className="flex items-center gap-1">
+            <Button asChild variant="ghost">
+              <Link href="/settings">
+                <Settings aria-hidden="true" data-icon="inline-start" />
+                Einstellungen
+              </Link>
+            </Button>
+            <LogoutButton />
+          </nav>
         </div>
       </header>
       <main className="flex flex-1 flex-col">{children}</main>

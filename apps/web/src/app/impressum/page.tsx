@@ -5,7 +5,7 @@ import { LegalSection } from '@/features/legal/legal-section';
 import { OperatorAddress } from '@/features/legal/operator-address';
 
 export const metadata: Metadata = {
-  title: 'Impressum · Quellenchat',
+  title: 'Impressum',
 };
 
 export default function ImpressumPage() {

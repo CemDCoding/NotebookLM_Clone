@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, RotateCw } from 'lucide-react';
+import { FileText, RotateCw, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toErrorMessage } from '@/features/notebooks/to-error-message';
 import { SourceItem } from './source-item';
@@ -21,7 +21,10 @@ export function SourceList({ notebookId }: SourceListProps) {
 
   if (sources.isError) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed px-4 py-10 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-4 py-10 text-center">
+        <span className="flex size-10 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 text-destructive">
+          <TriangleAlert aria-hidden="true" className="size-5" />
+        </span>
         <p role="alert" className="text-sm text-muted-foreground">
           Die Quellen konnten nicht geladen werden. {toErrorMessage(sources.error)}
         </p>

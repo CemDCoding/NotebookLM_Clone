@@ -92,7 +92,7 @@ Die Einstellungen werden **im Dashboard** in den Settings des Service gesetzt. D
 | Build | Custom Build Command | `pnpm install --frozen-lockfile && pnpm --filter @notebooklm/shared build && pnpm --filter @notebooklm/api build` |
 | Build | Watch Paths | leer |
 | Deploy | Region | EU West (Amsterdam) |
-| Deploy | Custom Start Command | `pnpm --filter @notebooklm/api db:migrate && pnpm --filter @notebooklm/api start:prod` |
+| Deploy | Custom Start Command | `pnpm --filter @notebooklm/api db:migrate && cd apps/api && exec node dist/main` |
 | Deploy | Healthcheck Path / Timeout | `/health` / `60` Sekunden |
 | Deploy | Restart Policy | On Failure, höchstens 5 Versuche |
 | Config-as-code | Railway Config File | leer |
@@ -100,11 +100,13 @@ Die Einstellungen werden **im Dashboard** in den Settings des Service gesetzt. D
 | Variables | `PORT` | `8080` |
 | Variables | `RUN_MODE` | `all` |
 | Variables | `WEB_ORIGIN` | Produktionsdomain von Vercel |
+| Variables | `RAILWAY_DEPLOYMENT_DRAINING_SECONDS` | `20` |
 
 - **Root Directory leer:** Der Build braucht `pnpm-lock.yaml` und `packages/shared` aus dem Repository-Root.
 - **Watch Paths leer:** Sonst löst eine Änderung nur in `packages/shared` kein Deployment aus.
 - **`PORT` ausdrücklich setzen:** Ohne die Variable übernahm Railway den Port 5432 aus der `DATABASE_URL`. Die App lauschte dann dort, während die öffentliche Domain keine Antwort bekam (`502 Application failed to respond`, Healthcheck trotzdem grün). `PORT` und der Target Port der Domain stehen deshalb fest auf `8080`.
 - **Client-IP für das Rate-Limit:** `trust proxy` steht auf `1`. Live gemessen: Verschiedene Client-IPs bekommen getrennte Zähler, gefälschte `X-Forwarded-For`-Header ändern den Zähler nicht. Bekannte Einschränkung: Pro Client entstehen zwei Zähler, die abwechselnd hochzählen. Das Limit pro IP liegt damit effektiv bis zum Doppelten. Für den groben Flutschutz ist das unkritisch, die fachlichen Limits zählen pro Nutzer in der Datenbank.
+- **Sauberes Herunterfahren:** Der Startbefehl ersetzt die Shell per `exec` durch Node, damit das `SIGTERM` von Railway beim Redeploy den Node-Prozess erreicht. Über pnpm und eine `&&`-Kette käme es nicht an (`docs/security-checklist.md`, Abschnitt 3.1). `node dist/main` entspricht dem Skript `start:prod`. Die 20 Sekunden Gnadenfrist decken den Stopp von pg-boss (bis 10 s) und das Schließen des Pools (bis 5 s) ab, erst danach folgt `SIGKILL`. Die Migration läuft weiter vor dem Start, schlägt sie fehl, startet die neue Version nicht.
 - **Nur ein Service:** Railway erkennt den pnpm-Workspace und legt beim Verbinden für jede App einen Service an. Der Service für `@notebooklm/web` wird gelöscht, weil das Frontend auf Vercel läuft.
 
 **Warum keine Konfigurationsdatei:** Ursprünglich lagen diese Werte versioniert in einer `railway.json`. Railway hat diese Config as Code abgekündigt. Neue Services können sie seit 2026-08-28 nicht mehr nutzen, bestehende Dateien werden nur bis 2026-12-01 gelesen. Der Nachfolger „Infrastructure as Code“ (`.railway/railway.ts`) bräuchte das npm-Paket `railway` und die Railway-CLI. Außerdem wird er nicht beim Deployment angewendet, sondern per `railway config apply`. Für einen einzigen Service steht das in keinem Verhältnis zum Nutzen. Die Werte stehen deshalb im Dashboard und sind hier dokumentiert.

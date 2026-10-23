@@ -91,4 +91,12 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /*
+   * Keyboard focus is always visible, also on plain links that bring no ring of their own.
+   * Components that draw their own ring set `outline-none`, which as a utility wins over this.
+   */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
 }

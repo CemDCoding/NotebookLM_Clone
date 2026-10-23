@@ -3,7 +3,7 @@ import { CreateNotebookButton } from '@/features/notebooks/create-notebook-butto
 import { NotebookOverview } from '@/features/notebooks/notebook-overview';
 
 export const metadata: Metadata = {
-  title: 'Notebooks – Quellenchat',
+  title: 'Notebooks',
 };
 
 // The list is fetched in the browser: apiFetch needs the session's access token, and

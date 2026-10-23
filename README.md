@@ -153,7 +153,8 @@ pnpm dev                                        # Web (localhost:3000) und API (
 pnpm lint
 pnpm typecheck
 pnpm test
-pnpm test:e2e
+pnpm --filter web exec playwright install chromium   # einmalig: Browser für den E2E-Test
+pnpm test:e2e                                        # braucht ein laufendes `pnpm dev` und E2E_USER_* in apps/web/.env.local
 ```
 
 Einrichtung der Supabase-Projekte, Build-Einstellungen und Deployment: [`docs/deployment.md`](docs/deployment.md).

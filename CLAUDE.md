@@ -377,7 +377,7 @@ pnpm lint                       # ESLint in allen Paketen
 pnpm format                     # Code mit Prettier formatieren (pnpm format:check prüft nur)
 pnpm typecheck                  # tsc --noEmit in allen Paketen
 pnpm test                       # Vitest in allen Paketen
-pnpm test:e2e                   # Playwright-E2E-Test gegen die Entwicklungsumgebung
+pnpm test:e2e                   # Playwright-E2E-Test gegen die Entwicklungsumgebung (braucht laufendes pnpm dev, einmalig: pnpm --filter web exec playwright install chromium)
 pnpm --filter api db:generate   # Drizzle-Migration aus dem Schema erzeugen
 pnpm --filter api db:migrate    # Migrationen anwenden
 pnpm --filter api db:seed       # Demo-Account und Demo-Notebook anlegen bzw. zurücksetzen

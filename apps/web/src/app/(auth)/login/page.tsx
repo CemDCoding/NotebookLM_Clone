@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { LoginForm } from '@/features/auth/login-form';
 
 export const metadata: Metadata = {
-  title: 'Anmelden – Quellenchat',
+  title: 'Anmelden',
 };
 
 export default function LoginPage() {

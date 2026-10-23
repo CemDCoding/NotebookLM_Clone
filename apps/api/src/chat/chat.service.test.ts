@@ -601,4 +601,56 @@ describe('ChatService', () => {
       expect(f.repository.rows).toHaveLength(1);
     });
   });
+
+  // CLAUDE.md section 7 "DSGVO": logs carry IDs, model, duration and counts,
+  // never the question, the answer, source text or a provider's message.
+  describe('logging', () => {
+    const QUESTION = 'Geheime Frage zur Kündigung?';
+
+    function allLogs(): string {
+      const levels = [Logger.prototype.log, Logger.prototype.warn, Logger.prototype.error];
+      return JSON.stringify(levels.map((level) => vi.mocked(level).mock.calls));
+    }
+
+    function expectNoContent(logs: string): void {
+      for (const content of [
+        QUESTION,
+        ...f.provider.tokens,
+        ...retrievedChunks.map((chunk) => chunk.content),
+        ...retrievedChunks.map((chunk) => chunk.sourceTitle),
+      ]) {
+        expect(logs).not.toContain(content.trim());
+      }
+    }
+
+    it('logs a successful answer without question, answer or sources', async () => {
+      await ask(QUESTION);
+
+      const logs = allLogs();
+      expect(logs).toContain('Chat answered');
+      expectNoContent(logs);
+    });
+
+    it('logs a provider failure by class only, without its message', async () => {
+      f.provider.failAfterTokens = 1;
+
+      await ask(QUESTION);
+
+      const logs = allLogs();
+      expect(logs).toContain('Chat failed');
+      expect(logs).not.toContain('Provider overloaded');
+      expectNoContent(logs);
+    });
+
+    it('logs a failed save by class only, without its message', async () => {
+      f.repository.failNextSave = true;
+
+      await ask(QUESTION);
+
+      const logs = allLogs();
+      expect(logs).toContain('Chat failed');
+      expect(logs).not.toContain('Database unavailable');
+      expectNoContent(logs);
+    });
+  });
 });
