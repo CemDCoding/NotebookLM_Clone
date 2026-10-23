@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AccountModule } from './account/account.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { AllExceptionsFilter, RequestIdMiddleware } from './common/filters';
@@ -37,10 +38,10 @@ export const IP_THROTTLE = { ttl: 60_000, limit: 120 } as const;
 // usage cleanup job.
 // Chat and retrieval are HTTP-only: the chat endpoint is the only consumer of
 // the vector search, and the worker needs neither. The model list only serves
-// the chat picker.
+// the chat picker. The data export is an HTTP download only.
 export const RUN_MODE_MODULES: RunModeModules = {
   always: [DbModule, AuthModule, HealthModule, StorageModule, QueueModule, LlmModule, LimitsModule],
-  http: [NotebooksModule, SourcesModule, RetrievalModule, ChatModule, ModelsModule],
+  http: [NotebooksModule, SourcesModule, RetrievalModule, ChatModule, ModelsModule, AccountModule],
   worker: [IngestionModule],
 };
 

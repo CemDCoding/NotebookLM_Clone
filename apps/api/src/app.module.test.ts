@@ -145,6 +145,7 @@ describe('Routes of all controllers', () => {
   // A new controller has to be added here, which puts it in front of the two audits below.
   it('finds the controllers of every feature module', () => {
     expect(ALL_CONTROLLERS.map((controller) => controller.name).sort()).toEqual([
+      'AccountController',
       'ChatController',
       'HealthController',
       'ModelsController',
