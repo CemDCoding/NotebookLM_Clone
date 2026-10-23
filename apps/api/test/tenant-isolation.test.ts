@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import type { Sql } from 'postgres';
 import { describe, expect, it } from 'vitest';
+import { AccountRepository } from '../src/account/account.repository';
 import { ChatRepository } from '../src/chat/chat.repository';
 import type { Database } from '../src/db/db.module';
 import * as schema from '../src/db/schema';
@@ -97,6 +98,8 @@ const answer = {
 };
 
 const CALLS: Record<string, RepositoryCall> = {
+  'AccountRepository.readAll': (db) => new AccountRepository(db).readAll(USER),
+
   'NotebooksRepository.list': (db) => new NotebooksRepository(db).list(USER),
   'NotebooksRepository.findById': (db) => new NotebooksRepository(db).findById(USER, NOTEBOOK),
   'NotebooksRepository.create': (db) => new NotebooksRepository(db).create(USER, 'Titel'),
