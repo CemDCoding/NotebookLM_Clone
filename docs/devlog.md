@@ -335,3 +335,33 @@ Nachgetragen am 2026-10-24 aus `git log` und dem Build-Plan. Berichte und Messwe
 
 **Nächster Schritt**
 - Welle zusammenführen, danach M6-DEP-01: Screenshot, Loom-Video, Checkliste aus `docs/deployment.md`, Seed-Reset, Abgabe.
+
+## 2026-10-24 – Abgabe
+
+**Meilenstein:** M6 komplett, live auf `4c6682b`. M6-DEP-01 fertig, Stand eingefroren
+
+**Umgesetzt (M6-W1: M6-OPS-01, M6-OPS-02, M6-OPS-03)**
+- README auf den Endstand gebracht: Projektstand-Hinweis entfernt, Links auf ADR 1–4 und die Sicherheits-Checkliste.
+- ADR 4 hält die bewussten Vereinfachungen mit ihrem Weg in die Produktion fest.
+- `docs/ai-workflow.md` beschreibt Phase 2 und die Stellen, an denen die KI korrigiert werden musste. Dazu kommt eine Gliederung für ein Loom-Video von 3 bis 5 Minuten, gekürzt von den zulässigen 10.
+- Am Integrationspunkt nachgezogen:
+  - Paketzahl in `ai-workflow.md` korrigiert.
+  - Zeile „Keine Staging-Umgebung“ in der README-Tabelle ergänzt, passend zu ADR 4.
+  - Weg zur Mehrsprachigkeit in README und ADR 4 vereinheitlicht.
+
+**Abgabe (M6-DEP-01)**
+- Screenshot von Claude per Playwright-Skript gegen die lokale Entwicklungsumgebung aufgenommen. Die Zugangsdaten las nur das Skript aus `apps/web/.env.local`. Gezeigt wird die Zitat-Vorschau beim Überfahren, weil das Seitenpanel den Rest der Seite abdunkelt. Das Panel ist im Video zu sehen.
+- Loom-Video aufgenommen und im README verlinkt. Danach `dev` nach `master` gebracht, nur Doku, ohne Codeänderung.
+- Prod-Seed aus einem Worktree von `master`. Vorher geprüft, dass `.env.production` auf prod zeigt und nicht auf dev.
+- Zusätzlich drei Demo-Accounts für einzelne Empfänger, ohne Codeänderung. Der Seed läuft mit `DEMO_USER_*` aus der Shell, weil Shell-Variablen sowohl `.env` als auch `--env-file` überschreiben. Das ist vorher mit `node` und `tsx` gemessen. Jeder Account hat eigene Daten und eigene Nutzerlimits, die globalen Limits teilen sich alle.
+- Checkliste vor der Abgabe:
+  - Keine `.env`-Datei in der Git-Historie.
+  - Die echten Schlüssel, DB-Passwörter und Demo-Zugangsdaten kommen weder in der Historie noch im ausgelieferten Web-Bundle vor. Geprüft ohne Ausgabe der Werte.
+  - Hauptfluss live durchgespielt, Mistral-Limit, Impressum und Datenschutz geprüft.
+
+**Probleme und Erkenntnisse**
+- KI-Fehler: Die Seed-Anleitung für den frischen Worktree ließ den Build von `packages/shared` aus. Der Seed brach beim Laden der Module ab, bevor er Datenbank oder Supabase berührte.
+- Nicht belegt: ob das Polling von pg-boss das Supabase-Free-Projekt aktiv hält. Während der Bewerbungsphase wird das Projekt deshalb von Hand im Blick behalten.
+
+**Nächster Schritt**
+- Bewerbungs-Mails verschicken. M7 (Spracheingabe) bleibt optional.

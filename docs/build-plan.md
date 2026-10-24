@@ -97,7 +97,7 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M6-OPS-01 | README finalisieren | M6 | OPS | W1 | M5-DEP-01 | M | fertig |
 | M6-OPS-02 | ADR 0004 und ADR-Review | M6 | OPS | W1 | M5-DEP-01 | M | fertig |
 | M6-OPS-03 | KI-Workflow und Devlog vervollständigen | M6 | OPS | W1 | M5-DEP-01 | S | fertig |
-| M6-DEP-01 | Abgabe | M6 | HUM | W2 | alle M6, H-12 | H | offen |
+| M6-DEP-01 | Abgabe | M6 | HUM | W2 | alle M6, H-12 | H | fertig |
 | M7-OPS-01 | ADR 0005 Spracheingabe (optional) | M7 | OPS | W1 | M6-DEP-01 | S | offen |
 | M7-WEB-01 | Spracheingabe (optional) | M7 | WEB | W2 | M7-OPS-01 | M | offen |
 | M7-DEP-01 | Deployment M7 (optional) | M7 | HUM | W3 | alle M7 | H | offen |
