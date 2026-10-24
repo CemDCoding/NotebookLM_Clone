@@ -93,10 +93,10 @@ Aufwand: S ≈ 0,75 h · M ≈ 1,5 h · L ≈ 2,5 h Agent-Sitzung. Für **[Mensc
 | M5-OPS-01 | Playwright-E2E-Test | M5 | OPS | W1 | M4-DEP-01, H-11 | M | fertig |
 | M5-API-02 | Datenexport `GET /me/export` | M5 | API | W2 | M5-SH-01, M5-API-01 | M | fertig |
 | M5-WEB-02 | Einstellungen und Export | M5 | WEB | W2 | M5-SH-01, M5-WEB-01 | S | fertig |
-| M5-DEP-01 | Deployment M5 | M5 | HUM | W3 | alle M5 | H | offen |
-| M6-OPS-01 | README finalisieren | M6 | OPS | W1 | M5-DEP-01 | M | offen |
-| M6-OPS-02 | ADR 0004 und ADR-Review | M6 | OPS | W1 | M5-DEP-01 | M | offen |
-| M6-OPS-03 | KI-Workflow und Devlog vervollständigen | M6 | OPS | W1 | M5-DEP-01 | S | offen |
+| M5-DEP-01 | Deployment M5 | M5 | HUM | W3 | alle M5 | H | fertig |
+| M6-OPS-01 | README finalisieren | M6 | OPS | W1 | M5-DEP-01 | M | fertig |
+| M6-OPS-02 | ADR 0004 und ADR-Review | M6 | OPS | W1 | M5-DEP-01 | M | fertig |
+| M6-OPS-03 | KI-Workflow und Devlog vervollständigen | M6 | OPS | W1 | M5-DEP-01 | S | fertig |
 | M6-DEP-01 | Abgabe | M6 | HUM | W2 | alle M6, H-12 | H | offen |
 | M7-OPS-01 | ADR 0005 Spracheingabe (optional) | M7 | OPS | W1 | M6-DEP-01 | S | offen |
 | M7-WEB-01 | Spracheingabe (optional) | M7 | WEB | W2 | M7-OPS-01 | M | offen |
@@ -592,7 +592,7 @@ Vorbereitet sind H-01 (Node.js und pnpm) und H-02 (dieser Plan liegt auf `dev`).
 
 - Screenshot erstellen: Notebook-Ansicht mit geöffnetem Zitat, Datei `docs/assets/screenshot.png`, von M6-OPS-01 eingebunden.
 - Checkliste aus `docs/deployment.md` „Checkliste vor der Abgabe“ vollständig abhaken.
-- `db:seed:prod` als Seed-Reset, Loom-Video aufnehmen (max. 10 Minuten, Gliederung aus dem Devlog), README-Links setzen, Bewerbungs-Mail mit Zugangsdaten senden.
+- `db:seed:prod` als Seed-Reset, Loom-Video aufnehmen (3 bis 5 Minuten, Gliederung aus `docs/ai-workflow.md`), README-Links setzen, Bewerbungs-Mail mit Zugangsdaten senden.
 
 ### M7 – Optional: Spracheingabe
 
@@ -1714,9 +1714,9 @@ Die `DEP`-Pakete stehen in Abschnitt 6.
 - **Umsetzung:**
   1. Die Phase-2-Beschreibung stützt sich auf den Devlog und die Abschlussberichte der Pakete, die der Entwickler bereitstellt.
   2. Ehrlich festhalten, wo die KI korrigiert werden musste.
-  3. Gliederung für das Loom-Video mit maximal 10 Minuten.
+  3. Gliederung für das Loom-Video für 3 bis 5 Minuten (Vorgabe: höchstens 10). Live-Demo des Kernflusses zuerst, Vorgehen und KI-Einsatz danach kurz.
 - **Schnittstellen:** keine
-- **Akzeptanzkriterien:** Keine Platzhalter mehr, die Gliederung passt in 10 Minuten.
+- **Akzeptanzkriterien:** Keine Platzhalter mehr, die Gliederung passt in 3 bis 5 Minuten.
 - **Tests:** keine
 - **Doku-Pflichten:** ist selbst Doku
 - **Aufwand:** S
