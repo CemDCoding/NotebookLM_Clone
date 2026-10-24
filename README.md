@@ -14,40 +14,24 @@ Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer samme
 
 ---
 
-## Projektstand
-
-**Meilenstein M5 (Feinschliff) ist live, der Funktionsumfang ist vollständig.** Live sind:
-- Login mit dem Demo-Account, Notebooks anlegen, umbenennen und löschen,
-- Quellen als PDF, TXT/Markdown oder eingefügter Text, mit Verarbeitung im Hintergrund und sichtbarem Status,
-- der Chat mit gestreamten Antworten auf Deutsch, prüfbaren Zitaten, Modellwahl und gespeichertem Verlauf,
-- der Datenexport als JSON unter „Einstellungen“ sowie gestaltete Lade-, Leer- und Fehlerzustände.
-
-Abgesichert ist das durch Unit-, Service- und Sicherheitstests, einen Playwright-E2E-Test für den Hauptfluss und ein Sicherheits-Audit mit Live-Checkliste ([`docs/security-checklist.md`](docs/security-checklist.md)). Außerdem enthält das Repository Projektplanung, Architekturentscheidungen ([ADR 1–3](docs/adr/)) und das Workspace-Tooling.
-
-Dieser Abschnitt wird mit jedem Deployment aktualisiert.
-
----
-
 ## Links
 
 | | |
 |---|---|
-| **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) (aktuell Stand M5: vollständiger Funktionsumfang) |
+| **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) |
 | **Loom-Video** | _folgt zur Abgabe_ |
 | **Zugang** | Die Zugangsdaten zum Demo-Account stehen in der Bewerbungs-Mail. Eine Registrierung ist bewusst nicht vorgesehen ([warum](#bewusste-abwägungen)). |
 
-<!-- Screenshot der Notebook-Ansicht (Quellen, Chat, geöffnetes Zitat) wird in M6 ergänzt. -->
+![Notebook-Ansicht mit Quellen, Chat und geöffnetem Zitat](docs/assets/screenshot.png)
 
 ---
 
 ## Funktionen
 
-_Alle Funktionen sind live, siehe [Projektstand](#projektstand)._
-
 - **Notebooks** anlegen, umbenennen und löschen
 - **Quellen** hinzufügen: PDF, TXT/Markdown oder eingefügter Text, mit sichtbarem Verarbeitungsstatus
 - **Quellen gezielt auswählen:** Einzelne Quellen für den Chat aktivieren oder deaktivieren
-- **Chat mit den Quellen:** gestreamte Antworten auf Deutsch, abbrechbar per Stopp-Button
+- **Chat mit den Quellen:** gestreamte Antworten auf Deutsch, abbrechbar per Stopp-Button, Verlauf pro Notebook gespeichert
 - **Prüfbare Zitate:** Marker wie `[1]` zeigen beim Überfahren die Textstelle. Ein Klick öffnet den vollständigen Abschnitt mit Quelle und Seitenzahl
 - **Ehrliche Antworten:** Geben die Quellen nichts her, sagt der Assistent das, statt etwas zu erfinden
 - **Modellwahl:** Mistral-Modelle live, lokale Modelle über Ollama in der Entwicklung
@@ -106,7 +90,7 @@ flowchart LR
 ## Sicherheit und Datenschutz
 
 **Zugriff**
-- Jeder API-Endpunkt erfordert ein gültiges JWT, das gegen die Schlüssel des Supabase-Projekts geprüft wird.
+- Jeder API-Endpunkt außer dem Health-Check erfordert ein gültiges JWT, das gegen die Schlüssel des Supabase-Projekts geprüft wird.
 - Jede Datenbankabfrage ist auf den angemeldeten Nutzer beschränkt. Fremde Ressourcen liefern `404`, damit ihre Existenz nicht erkennbar ist.
 - Row Level Security ist auf allen Tabellen aktiv. Selbst mit dem öffentlichen Supabase-Schlüssel sind keine Daten erreichbar (Defense in Depth).
 
@@ -127,12 +111,14 @@ flowchart LR
 - **Export (Art. 20):** Alle eigenen Daten als JSON.
 - Dokumentinhalte, Prompts und Antworten werden nie geloggt.
 
+Die Maßnahmen sind mit Tests abgesichert und in einer Live-Checkliste geprüft: [`docs/security-checklist.md`](docs/security-checklist.md).
+
 ---
 
 ## Lokale Einrichtung
 
 **Voraussetzungen**
-- Node.js (LTS) und pnpm
+- Node.js 24 (Version laut [`.nvmrc`](.nvmrc)) und pnpm
 - ein Supabase-Projekt für die Entwicklung (Region Frankfurt, Extension `vector`, Registrierung deaktiviert)
 - ein Mistral-API-Key
 - optional: [Ollama](https://ollama.com) für lokale Modelle
@@ -175,7 +161,7 @@ Das Projekt ist in etwa einer Woche neben einer Vollzeitstelle entstanden. Statt
 | Exakte statt approximativer Vektorsuche | Bei Notebook-Größen der Demo schnell und exakt | HNSW-Index mit iterativem Scan |
 | Zwei Spalten ohne Studio-Funktionen, nur Desktop | Fokus auf den Kern: Quellen und belegte Antworten | Zusammenfassungen, FAQ, Audio-Overview, responsives Layout |
 
-Die Begründungen im Detail stehen in den [Architecture Decision Records](docs/adr/). Die Vereinfachungen selbst werden in ADR 4 festgehalten, der mit M6 folgt.
+Die Begründungen im Detail stehen in den [Architecture Decision Records](docs/adr/): Die Vereinfachungen selbst sind in [ADR 4](docs/adr/0004-bewusste-vereinfachungen.md) festgehalten.
 
 ---
 
@@ -197,7 +183,8 @@ Die Nutzung von KI-Werkzeugen war ausdrücklich erwünscht. Entwickelt wurde mit
 | Dokument | Inhalt |
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Projektkontext, Architektur, Regeln und Meilensteine für den KI-Agenten |
-| [`docs/adr/`](docs/adr/) | Architekturentscheidungen mit Alternativen und Konsequenzen |
+| [ADR 1](docs/adr/0001-monorepo-nestjs-api.md) bis [ADR 4](docs/adr/0004-bewusste-vereinfachungen.md) | Architekturentscheidungen mit Alternativen und Konsequenzen |
+| [`docs/security-checklist.md`](docs/security-checklist.md) | Sicherheits-Audit mit Live-Prüfung |
 | [`docs/devlog.md`](docs/devlog.md) | Entwicklungs-Log pro Arbeitstag |
 | [`docs/ai-workflow.md`](docs/ai-workflow.md) | Wie die KI eingesetzt wurde – inklusive ihrer Grenzen |
 | [`docs/deployment.md`](docs/deployment.md) | Umgebungen, Einrichtung und Deployment |
