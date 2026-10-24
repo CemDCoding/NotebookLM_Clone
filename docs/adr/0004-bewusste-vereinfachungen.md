@@ -38,7 +38,7 @@ Ergänzend gilt: Der Ende-zu-Ende-Test (Playwright) deckt nur den Hauptfluss ab:
 - **Negativ / Kompromisse:** Die Demo ist nicht für Massennutzung, Mehrsprachigkeit oder kleine Bildschirme ausgelegt. Die Prüfung der Live-Umgebung stützt sich außer auf den E2E-Test auf manuelle Smoke-Tests nach jedem Deployment.
 - **Weg in die Produktion:**
   - **Registrierung:** Supabase-Registrierung mit E-Mail-Bestätigung über eigenen SMTP, dazu Account-Löschung durch den Nutzer und Missbrauchsschutz bei der Anmeldung. Die Datenschutzerklärung wird im selben Schritt angepasst (`CLAUDE.md §7`).
-  - **Mehrsprachigkeit:** Sprache als Konfiguration im Prompt, mit eigenen Tests je Sprache. Die Oberfläche bekommt eine Übersetzungsschicht.
+  - **Mehrsprachigkeit:** Die Antwortsprache wird aus der Frage abgeleitet und im Prompt vorgegeben, mit eigenen Prompt- und Zitat-Tests je Sprache. Die Oberfläche bekommt eine Übersetzungsschicht.
   - **Tokenbasiertes Chunking:** Ein Wechsel ändert die Abschnitte und verlangt eine Neuindizierung aller Quellen, ähnlich wie ein Embedding-Wechsel (ADR 0003).
   - **Worker und HNSW:** Derselbe Code läuft als `RUN_MODE=api` und `RUN_MODE=worker` in getrennten Services. Ein HNSW-Index mit iterativem Scan kommt dazu, sobald Notebooks groß werden (ADR 0002).
   - **Layout:** Responsives Layout für kleine Bildschirme. Die Studio-Funktionen erhalten eigene Bereiche neben Quellen und Chat.

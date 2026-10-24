@@ -160,6 +160,7 @@ Das Projekt ist in etwa einer Woche neben einer Vollzeitstelle entstanden. Statt
 | Ein Prozess für API und Worker | Minimaler Betrieb für Demo-Last | Getrennte Services per `RUN_MODE`, ohne Codeänderung |
 | Exakte statt approximativer Vektorsuche | Bei Notebook-Größen der Demo schnell und exakt | HNSW-Index mit iterativem Scan |
 | Zwei Spalten ohne Studio-Funktionen, nur Desktop | Fokus auf den Kern: Quellen und belegte Antworten | Zusammenfassungen, FAQ, Audio-Overview, responsives Layout |
+| Keine Staging-Umgebung | Ein drittes Supabase-Projekt wäre kostenpflichtig, eine mit dev geteilte Datenbank würde pg-boss-Jobs vermischen | Eigenes Staging-Projekt mit eigener Datenbank und Queue |
 
 Die Begründungen im Detail stehen in den [Architecture Decision Records](docs/adr/): Die Vereinfachungen selbst sind in [ADR 4](docs/adr/0004-bewusste-vereinfachungen.md) festgehalten.
 

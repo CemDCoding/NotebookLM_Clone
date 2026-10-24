@@ -36,7 +36,7 @@ Die KI arbeitet als ausführender Entwickler, die Entscheidungen bleiben beim Me
 
 ## Phase 2: Umsetzung
 
-Grundlage ist der [Build-Plan](build-plan.md): 47 Arbeitspakete mit klarer Dateizuständigkeit, geordnet in Wellen. Quelle für alles Folgende sind [Devlog](devlog.md) und `git log`.
+Grundlage ist der [Build-Plan](build-plan.md): 48 Arbeitspakete für Agents mit klarer Dateizuständigkeit, geordnet in Wellen. Quelle für alles Folgende sind [Devlog](devlog.md) und `git log`.
 
 ### Ablauf einer Welle
 
