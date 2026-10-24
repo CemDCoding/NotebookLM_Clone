@@ -232,6 +232,42 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 - Der Seed auf `dev` setzt die Tabellen `sources` und `chunks` voraus und legt ein pg-boss-Schema an. Der Prod-Seed läuft deshalb immer aus dem Code, der gerade auf `master` deployt ist, in einem temporären Worktree von `master`, nie aus dem Hauptcheckout auf `dev`.
 - Die Testdateien für den Smoke-Test von M3 (dreiseitige Text-PDF, PDF ohne Text, Markdown) liegen außerhalb des Repositorys und bleiben bis M3-DEP-01 aufbewahrt.
 
+## 2026-10-22 (Abend) – Chat mit Zitaten auf `dev`
+
+**Meilenstein:** M4 – Wellen 1 bis 3 auf `dev` integriert, M4-DEP-01 offen. M1-DEP-01 weiter blockiert (Railway)
+
+Nachgetragen am 2026-10-24 aus `git log` und dem Build-Plan. Berichte und Messwerte der Agents liegen nicht als Dateien vor, deshalb stehen hier nur Umfang und Ablauf, keine Testzahlen.
+
+**Vorgehen**
+- Der Entwickler gab M4 ausdrücklich auf `dev` frei, obwohl M4-SH-01 und M4-API-01 auf M3-DEP-01 verweisen. Der Plan hält die Abweichung in „Ausstehende Deployments“ fest. M4-DEP-01 beginnt erst, wenn M1-DEP-01 bis M3-DEP-01 fertig sind.
+
+**Umgesetzt (M4-W1, 22.10. 17:28: M4-SH-01, M4-API-01)**
+- Verträge in `packages/shared` für Chat, SSE-Events, Zitate und Modelle.
+- Tabelle `messages` mit RLS. Die Stubs `ChatModule` und `RetrievalModule` laden nur im HTTP-Teil (`RUN_MODE` `all` und `api`), nicht im Worker. Das ergänzte der Plan vor der Welle, samt Test in `app.module.test.ts`.
+
+**Umgesetzt (M4-W2, 22.10. 19:36: M4-API-02 bis M4-API-05, M4-WEB-01, M4-WEB-02)**
+- Streaming-Chat-Provider, Modell-Registry und `GET /models`. Der Controller liegt in einem eigenen `models.module.ts` im HTTP-Teil, damit er im Worker nicht erscheint.
+- Exakte Vektorsuche über aktive, bereite Quellen.
+- Prompt-Aufbau gegen Injection und Zuordnung der Zitate zu Chunks.
+- Chat-Limits pro Nutzer und global.
+- SSE-Client über `fetch` mit Abbruch. Dafür bekam `api-client.ts` eine Variante, die die rohe `Response` liefert und dieselbe Token- und `401`-Logik nutzt, damit es beides nur an einer Stelle gibt.
+- Antwort-Rendering mit sicherem Markdown und klickbaren Zitaten.
+
+**Umgesetzt (M4-W3, 23.10. 13:35: M4-API-06, M4-WEB-03)**
+- Chat-Service mit SSE-Endpunkt, der die Antwort mit Zitaten speichert, dazu der Verlauf. Der Test `chat-abort.test.ts` deckt den Abbruch ab.
+- Chat-Panel mit Modell-Picker, Stopp, Verlauf und Dialog zum Löschen des Verlaufs.
+
+**Integrationspunkt**
+- Danach ein Fix: Nach dem Löschen einer Quelle wird der Chatverlauf neu geladen (`a06e696`), damit gelöschte Quellen als „Quelle gelöscht“ erscheinen.
+- Der Plan stand um 14:11 auf `fertig` für alle M4-Pakete bis auf M4-DEP-01. Live geprüft wurde M4 im gemeinsamen Smoke-Test des nächsten Eintrags.
+
+**Probleme und Erkenntnisse**
+- Vor W2 wurden Lücken im Dateieigentum geschlossen (`models.module.ts`, `app.module.test.ts`, `api-client.ts`), bevor die Agents starteten. Die Details dazu stehen im Build-Plan, nicht in Berichten.
+- Zu Problemen im Review der einzelnen Pakete gibt es keine Aufzeichnung, deshalb wird hier nichts behauptet.
+
+**Nächster Schritt**
+- Deployment: Railway gibt Hobby-Builds wieder frei, siehe nächster Eintrag.
+
 ## 2026-10-23 – Deployment M1 bis M4
 
 **Meilenstein:** M1 bis M4 live, gemeinsam deployt (`cb5f778`). M1-DEP-01 bis M4-DEP-01 fertig
@@ -288,4 +324,14 @@ Ein Eintrag pro Arbeitstag. Meilensteine siehe [`CLAUDE.md`](../CLAUDE.md), Absc
 
 **Nächster Schritt**
 - M6: README finalisieren, ADR 4, KI-Workflow und Devlog vervollständigen, danach Screenshot, Loom-Video und Abgabe.
-- Für M6-OPS-03 vormerken: Für die M4-Arbeit auf `dev` fehlt noch ein eigener Devlog-Eintrag.
+
+## 2026-10-24 – Abgabe vorbereiten
+
+**Meilenstein:** M6 – Welle 1 (M6-OPS-01, M6-OPS-02, M6-OPS-03)
+
+**Umgesetzt**
+- Drei reine Doku-Pakete parallel in eigenen Worktrees gestartet (`e4fb704`).
+- M6-OPS-03: `docs/ai-workflow.md` um Phase 2, „Grenzen und Korrekturen“ und die Gliederung für das Loom-Video ergänzt. Der fehlende Devlog-Eintrag für M4 ist nachgetragen.
+
+**Nächster Schritt**
+- Welle zusammenführen, danach M6-DEP-01: Screenshot, Loom-Video, Checkliste aus `docs/deployment.md`, Seed-Reset, Abgabe.
