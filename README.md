@@ -19,7 +19,7 @@ Ein Nachbau von [Google NotebookLM](https://notebooklm.google.com): Nutzer samme
 | | |
 |---|---|
 | **Live-Demo** | [quellenchat.vercel.app](https://quellenchat.vercel.app) |
-| **Loom-Video** | _folgt zur Abgabe_ |
+| **Loom-Video** | [Vorgehen und Live-Test (Loom)](https://www.loom.com/share/93e0d342ef544caab70792f511e4f13b) |
 | **Zugang** | Die Zugangsdaten zum Demo-Account stehen in der Bewerbungs-Mail. Eine Registrierung ist bewusst nicht vorgesehen ([warum](#bewusste-abwägungen)). |
 
 ![Notebook-Ansicht mit Quellen, Chat und geöffnetem Zitat](docs/assets/screenshot.png)
